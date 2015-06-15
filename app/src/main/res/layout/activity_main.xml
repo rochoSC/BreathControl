@@ -40,7 +40,7 @@
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceMedium"
         android:text="0.0"
-        android:id="@+id/textView3"
+        android:id="@+id/lblBreathRate"
         android:layout_alignTop="@+id/textView2"
         android:layout_centerHorizontal="true"
         android:layout_alignBottom="@+id/textView2" />
@@ -50,9 +50,19 @@
         android:layout_height="wrap_content"
         android:text="Start"
         android:id="@+id/button"
-        android:layout_below="@+id/textView3"
+        android:layout_below="@+id/lblBreathRate"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="114dp"
         android:onClick="onClickStartBreathingCheckpoint"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:text="Not connected"
+        android:id="@+id/lblStatusMsg"
+        android:layout_alignParentBottom="true"
+        android:layout_alignRight="@+id/txtChronometer"
+        android:layout_alignEnd="@+id/txtChronometer" />
 
 </RelativeLayout>
