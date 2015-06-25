@@ -34,25 +34,13 @@ import zephyr.android.BioHarnessBT.*;
 
 public class MainActivity extends ActionBarActivity {
 
-    long START_TIME_FOR_CHECKPOINT_TEST = 10000; //The average Breathing Rate per minute is 12-20
-    long STEP_SIZE = 1000;
-    int MIN_BREATH_RATE = 12;
-    int MAX_BREATH_RATE = 20;
-    public static double TO_DELETE_RATE = 1;
-    float USER_AVERAGE_BREATH_RATE = 0;
 
-    boolean isConectedBH = false;
-    boolean isChronometerRunning = false;
-    float COMMON_MIDDLE_BREATH_RATE = MIN_BREATH_RATE + ((MAX_BREATH_RATE - MIN_BREATH_RATE) / 2);
 
-    //For breathing data
-    float breathingSum = 0;
-    int numberOfMeasures = 0;
-    float averageBreathing = 0;
 
-    CounterDownChronometer chronometer = null;
+    /*CounterDownChronometer chronometer = null;
     TextView txtCrmt = null;
-    Button btnStartCrmtr = null;
+    Button btnStartCrmtr = null;*/
+
 
     /*BioHarness*/
     BluetoothAdapter btAdapter = null; //To work with Bluetooth
@@ -71,7 +59,7 @@ public class MainActivity extends ActionBarActivity {
                 if (txtBreathRate != null){
                     txtBreathRate.setText(respirationRate);
 
-                    //This is where we will updating the rate of the user for the noise decisions
+                    /*//This is where we will updating the rate of the user for the noise decisions
                     JoystickView.USER_CURRENT_BREATH_RATE = Double.parseDouble(respirationRate);
                     TO_DELETE_RATE = Double.parseDouble(respirationRate);
 
@@ -93,7 +81,7 @@ public class MainActivity extends ActionBarActivity {
                             if(averageBreathing < MIN_BREATH_RATE || averageBreathing > MAX_BREATH_RATE ){
                                 Toast.makeText(MainActivity.this, "Breathing rate out of range. Try it again", Toast.LENGTH_SHORT).show();
                             }else{
-                                USER_AVERAGE_BREATH_RATE = averageBreathing;
+                                USER_AVERAGE_BREATH_RATE = averageBreathing;*/
                                 //New activity sphero controll
                                 //Consider the average rate of this user and the common middle rate
                                 /*
@@ -107,10 +95,10 @@ public class MainActivity extends ActionBarActivity {
                                 *
                                 * */
 
-                                Toast.makeText(MainActivity.this, "Average: "+ averageBreathing, Toast.LENGTH_SHORT).show();
+                    /*            Toast.makeText(MainActivity.this, "Average: "+ averageBreathing, Toast.LENGTH_SHORT).show();
                             }
                         }
-                    }
+                    }*/
                 }
             }
         }
@@ -122,9 +110,9 @@ public class MainActivity extends ActionBarActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        txtCrmt = (TextView) findViewById(R.id.txtChronometer);
+        /*txtCrmt = (TextView) findViewById(R.id.txtChronometer);
         chronometer = new CounterDownChronometer(START_TIME_FOR_CHECKPOINT_TEST,STEP_SIZE);
-        btnStartCrmtr = (Button) findViewById(R.id.button);
+        btnStartCrmtr = (Button) findViewById(R.id.button);*/
 
         //connectToBH();
     }
@@ -179,7 +167,7 @@ public class MainActivity extends ActionBarActivity {
                 btClient.start();
                 txtStatusMessage = (TextView) findViewById(R.id.txtStatusMsg);
                 bhStatusMessage = "Connected";
-                isConectedBH = true;
+                //isConectedBH = true;
                 txtStatusMessage.setText(bhStatusMessage);
 
                 //Reset all the values to 0s
@@ -285,7 +273,7 @@ public class MainActivity extends ActionBarActivity {
     }
 
 
-    public class CounterDownChronometer extends CountDownTimer {
+    /*public class CounterDownChronometer extends CountDownTimer {
         public CounterDownChronometer(long startCount, long countStep){
             super(startCount,countStep);
         }
@@ -306,6 +294,6 @@ public class MainActivity extends ActionBarActivity {
 
             btnStartCrmtr.setEnabled(true);
         }
-    }
+    }*/
 
 }
