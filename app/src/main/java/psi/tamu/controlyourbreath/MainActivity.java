@@ -34,9 +34,11 @@ public class MainActivity extends ActionBarActivity {
     long STEP_SIZE = 1000;
     int MIN_BREATH_RATE = 12;
     int MAX_BREATH_RATE = 20;
+
+    float USER_AVERAGE_BREATH_RATE = 0;
+
     boolean isConectedBH = false;
     boolean isChronometerRunning = false;
-    float USER_AVERAGE_BREATH_RATE = 0;
     float COMMON_MIDDLE_BREATH_RATE = MIN_BREATH_RATE + ((MAX_BREATH_RATE - MIN_BREATH_RATE) / 2);
 
     //For breathing data

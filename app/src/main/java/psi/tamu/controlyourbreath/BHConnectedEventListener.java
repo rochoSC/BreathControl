@@ -1,7 +1,7 @@
 /*
 * Author:       Roger Fernando Solis Castilla
 * Date:         06/16/2015
-* Description:  Activity that connects the bioharness and do the first measure
+* Description:  Listener for the BioHarness measures.
 * */
 
 package psi.tamu.controlyourbreath;
@@ -62,7 +62,7 @@ public class BHConnectedEventListener extends ConnectListenerImpl{
 
                 //Only the general case
                 if (MsgID == GP_MSG_ID) {
-                    //Displaying only the Respiration Rate
+                    //Sending the breath info to the activity by the handler
                     double RespRate = GPInfo.GetRespirationRate(DataArray);
 
                     Message text1 = hdlrNewHandler.obtainMessage(RESPIRATION_RATE);
