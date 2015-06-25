@@ -28,7 +28,7 @@
             android:onClick="onSleepClick"
             android:text="Sleep"/>
 
-    <orbotix.robot.widgets.CalibrationImageButtonView
+    <psi.tamu.controlyourbreath.orbotix.robot.widgets.CalibrationImageButtonView
             android:id="@+id/calibration_image_button"
             android:layout_width="50dp"
             android:layout_height="50dp"
@@ -43,14 +43,22 @@
             app:calibration_circle_radius="100dp"
             />
 
-    <orbotix.robot.widgets.SlideToSleepView
+    <psi.tamu.controlyourbreath.orbotix.robot.widgets.SlideToSleepView
             android:id="@+id/slide_to_sleep_view"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentTop="true"
             android:layout_centerHorizontal="true"/>
 
-    <orbotix.robot.widgets.joystick.JoystickView
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="New Text"
+        android:id="@+id/txtRate"
+        android:layout_below="@+id/color_button"
+        android:layout_centerHorizontal="true"/>
+
+    <psi.tamu.controlyourbreath.orbotix.robot.widgets.joystick.JoystickView
             android:id="@+id/joystick"
             android:layout_width="250dp"
             android:layout_height="250dp"
@@ -64,7 +72,7 @@
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"/>
 
-    <orbotix.robot.widgets.NoSpheroConnectedView
+    <psi.tamu.controlyourbreath.orbotix.robot.widgets.NoSpheroConnectedView
             android:id="@+id/no_sphero_connected_view"
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
@@ -75,6 +83,8 @@
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
             android:background="#A0000000"/>
+
+
 
 
 </RelativeLayout>

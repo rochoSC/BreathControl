@@ -40,11 +40,11 @@ public class JoystickView extends View implements Controller {
     public final int HARD = 3;
     public final double HARD_BASE_SPEED= MAX_SCALED_SPEED * .80;
 
-    public int ACTUAL_LEVEL = this.HARD; //The actual level of the game
+    public int ACTUAL_LEVEL = this.MEDIUM; //The actual level of the game
 
     public double MAX_BREATH_RATE = 20; //This acts like the limit of the worst breathing rate for the user.
     public double MAX_IDEAL_BREATH_RATE = 8; //This acts like up limit of the best breathing rate for the user.
-    public double USER_CURRENT_BREATH_RATE = 12; //This will be updated by BIOHarness
+    public static double USER_CURRENT_BREATH_RATE = 6; //This will be updated by BIOHarness
 
     //End of game parameters
 
@@ -90,6 +90,7 @@ public class JoystickView extends View implements Controller {
             //Get edge overlap
             this.puck_edge_overlap = (int)a.getDimension(R.styleable.JoystickView_edge_overlap, 10);
         }
+
     }
 
 
@@ -335,11 +336,9 @@ public class JoystickView extends View implements Controller {
 
                 //Adjust drive coordinates for driving
                 Point drive_coord = this.getDrivePuckPosition(local_point);
-                System.out.println("BEFORE ------X: "+drive_coord.x + "    -------Y: " + drive_coord.y);
                 //Returns an alteratedCoord if breath is out of range
                Point alteratedCoord = this.getAlteredCoord(drive_coord);
 
-                System.out.println("AFTER ------X: "+alteratedCoord.x + "    -------Y: " + alteratedCoord.y);
                 this.drive_control.driveJoyStick(alteratedCoord.x , alteratedCoord.y);
                 //this.drive_control.driveJoyStick(drive_coord.x , drive_coord.y);
 

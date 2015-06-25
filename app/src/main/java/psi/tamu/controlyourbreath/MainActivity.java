@@ -27,14 +27,18 @@ import android.widget.Toast;
 import java.lang.reflect.Method;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+
+import psi.tamu.controlyourbreath.orbotix.robot.widgets.joystick.JoystickView;
+import psi.tamu.controlyourbreath.orbotix.uisample.UiSampleActivity;
 import zephyr.android.BioHarnessBT.*;
 
 public class MainActivity extends ActionBarActivity {
+
     long START_TIME_FOR_CHECKPOINT_TEST = 10000; //The average Breathing Rate per minute is 12-20
     long STEP_SIZE = 1000;
     int MIN_BREATH_RATE = 12;
     int MAX_BREATH_RATE = 20;
-
+    public static double TO_DELETE_RATE = 1;
     float USER_AVERAGE_BREATH_RATE = 0;
 
     boolean isConectedBH = false;
@@ -66,6 +70,12 @@ public class MainActivity extends ActionBarActivity {
                 txtBreathRate = (TextView)findViewById(R.id.txtBreathRate);
                 if (txtBreathRate != null){
                     txtBreathRate.setText(respirationRate);
+
+                    //This is where we will updating the rate of the user for the noise decisions
+                    JoystickView.USER_CURRENT_BREATH_RATE = Double.parseDouble(respirationRate);
+                    TO_DELETE_RATE = Double.parseDouble(respirationRate);
+
+
 
                     if(Double.parseDouble(respirationRate) < MIN_BREATH_RATE || Double.parseDouble(respirationRate) > MAX_BREATH_RATE)
                         txtBreathRate.setTextColor(Color.parseColor("#AA3939"));
@@ -228,9 +238,9 @@ public class MainActivity extends ActionBarActivity {
     @Override
     public void onPause(){
         super.onPause();
-        if (isConectedBH)
-            disconectFromBH();
-        isConectedBH = false;
+        //if (isConectedBH)
+            //disconectFromBH();
+        //isConectedBH = false;
     }
 
     public void disconectFromBH(){
@@ -242,6 +252,7 @@ public class MainActivity extends ActionBarActivity {
         //Close the communication with the device & throw an exception if failure
         btClient.Close();
     }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -265,11 +276,14 @@ public class MainActivity extends ActionBarActivity {
     }
 
     public void onClickStartBreathingCheckpoint(View v){
-        chronometer.start();
-        isChronometerRunning = true;
-        btnStartCrmtr.setEnabled(false);
+        //chronometer.start();
+        //isChronometerRunning = true;
+        //btnStartCrmtr.setEnabled(false);
         //Check for Zephyr BioHarness
+        Intent activityLauncher = new Intent(this,UiSampleActivity.class);
+        this.startActivity(activityLauncher);
     }
+
 
     public class CounterDownChronometer extends CountDownTimer {
         public CounterDownChronometer(long startCount, long countStep){

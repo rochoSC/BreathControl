@@ -11,6 +11,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Toast;
 
+import psi.tamu.controlyourbreath.MainActivity;
 import psi.tamu.controlyourbreath.R;
 import psi.tamu.controlyourbreath.orbotix.robot.app.ColorPickerActivity;
 import orbotix.robot.base.Robot;
@@ -62,7 +63,7 @@ public class UiSampleActivity extends ControllerActivity {
 
 
     //To receive the colors provided by the user through the color picker.
-     BroadcastReceiver mColorChangeReceiver = new BroadcastReceiver() {
+     BroadcastReceiver mColorChangeReceiver  = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             // update colors
@@ -75,12 +76,13 @@ public class UiSampleActivity extends ControllerActivity {
         }
     };
 
+
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
-
+        //mColorChangeReceiver
         // Set up the Sphero Connection View
         mSpheroConnectionView = (SpheroConnectionView) findViewById(R.id.sphero_connection_view);
         //When we get the view, instantly launches "StartDiscovery" and shows the view <---NOTE
@@ -191,6 +193,15 @@ public class UiSampleActivity extends ControllerActivity {
     }
 
     @Override
+    protected void onStop(){
+        super.onStop();
+        try {
+            unregisterReceiver(mColorChangeReceiver); // many times throws exception on leak
+        } catch (Exception e) {
+        }
+    }
+
+    @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
@@ -259,4 +270,11 @@ public class UiSampleActivity extends ControllerActivity {
         mSlideToSleepView.interpretMotionEvent(event);
         return super.dispatchTouchEvent(event);
     }
+
+    /*
+    * BioHarness Section
+    */
+
+
+
 }
