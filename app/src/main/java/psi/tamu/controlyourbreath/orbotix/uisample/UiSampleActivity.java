@@ -20,8 +20,9 @@ import java.lang.reflect.Method;
 import java.util.Set;
 
 import psi.tamu.controlyourbreath.BHConnectedEventListener;
-import psi.tamu.controlyourbreath.MainActivity;
+import psi.tamu.controlyourbreath.MainMenuFragment;
 import psi.tamu.controlyourbreath.R;
+import psi.tamu.controlyourbreath.WelcomeActivity;
 import psi.tamu.controlyourbreath.orbotix.robot.app.ColorPickerActivity;
 import orbotix.robot.base.Robot;
 import psi.tamu.controlyourbreath.orbotix.robot.widgets.CalibrationImageButtonView;
@@ -38,6 +39,9 @@ import zephyr.android.BioHarnessBT.BTClient;
 
 public class UiSampleActivity extends ControllerActivity {
 
+
+    public final int EASY = 1, MEDIUM = 2, HARD = 3;
+    public  int ACTUAL_DIFICULTY = EASY;
     /**
      * ID to start the StartupActivity for result to connect the Robot
      */
@@ -54,7 +58,7 @@ public class UiSampleActivity extends ControllerActivity {
     /**
      * The Robot to control
      */
-    private Sphero mRobot;
+    static public Sphero mRobot;
 
     /**
      * One-Touch Calibration Button
@@ -79,21 +83,14 @@ public class UiSampleActivity extends ControllerActivity {
     /**
      * Sphero Connection View
      */
-    private SpheroConnectionView mSpheroConnectionView;
+   // private SpheroConnectionView mSpheroConnectionView;
 
     //Colors
     private int mRed = 0xff;
     private int mGreen = 0xff;
     private int mBlue = 0xff;
 
-    /*BioHarness*/
-    BluetoothAdapter btAdapter = null; //To work with Bluetooth
-    BTClient btClient;
-    BHConnectedEventListener bhConnectedListener;
 
-    final int RESPIRATION_RATE = 0x101;
-
-    static boolean isBioHarnessConected = false;
 
     //To receive the colors provided by the user through the color picker.
     BroadcastReceiver mColorChangeReceiver = new BroadcastReceiver() {
@@ -109,6 +106,14 @@ public class UiSampleActivity extends ControllerActivity {
         }
     };
 
+    BroadcastReceiver bcBHReceiver  = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String rate = intent.getStringExtra(MainMenuFragment.EXTRA_NEW_MEASURE);
+            TextView txtRate = (TextView) findViewById(R.id.txtBreathRateGUI);
+            txtRate.setText(rate);
+        }
+    };
 
     /**
      * Called when the activity is first created.
@@ -117,15 +122,22 @@ public class UiSampleActivity extends ControllerActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
-        //mColorChangeReceiver
+        ACTUAL_DIFICULTY = getIntent().getIntExtra("dificulty", EASY);
+
+
         // Set up the Sphero Connection View
-        mSpheroConnectionView = (SpheroConnectionView) findViewById(R.id.sphero_connection_view);
+        //mSpheroConnectionView = (SpheroConnectionView) findViewById(R.id.sphero_connection_view);
         //When we get the view, instantly launches "StartDiscovery" and shows the view <---NOTE
         //When a connection is accepted, automatically hides the view.
-        mSpheroConnectionView.addConnectionListener(new ConnectionListener() {
+        //mSpheroConnectionView.addConnectionListener(new ConnectionListener() {
 
-            @Override
-            public void onConnected(Robot robot) {
+        //Robot r  = getIntent().getParcelableExtra("robot");
+        //mRobot = (Sphero)r;
+        //setRobot(mRobot);
+        // Make sure you let the calibration view knows the robot it should control
+
+        //mRobot.setColor(0, 255, 0);
+         /*   public void onConnected(Robot robot) {
                 // Set Robot
                 mRobot = (Sphero) robot; // safe to cast for now
                 //Set connected Robot to the Controllers
@@ -149,7 +161,7 @@ public class UiSampleActivity extends ControllerActivity {
             public void onDisconnected(Robot sphero) {
                 mSpheroConnectionView.startDiscovery();
             }
-        });
+        });*/
 
         //Add the JoystickView as a Controller
         addController((JoystickView) findViewById(R.id.joystick));
@@ -182,8 +194,9 @@ public class UiSampleActivity extends ControllerActivity {
 
             @Override
             public void onConnectClick() {
-                mSpheroConnectionView.setVisibility(View.VISIBLE);
-                mSpheroConnectionView.startDiscovery();
+                finish();
+                //mSpheroConnectionView.setVisibility(View.VISIBLE);
+                //mSpheroConnectionView.startDiscovery();
             }
 
             @Override
@@ -193,7 +206,33 @@ public class UiSampleActivity extends ControllerActivity {
                 UiSampleActivity.this.startActivityForResult(settingsIntent, BLUETOOTH_SETTINGS_REQUEST);
             }
         });
+        JoystickView js = (JoystickView)findViewById(R.id.joystick);
+        js.setDificulty(this.ACTUAL_DIFICULTY);
 
+        setRobot(mRobot);
+        // Make sure you let the calibration view knows the robot it should control
+
+        //Remember, at this point the robot should be already connected
+        TextView txtDificulty = (TextView) findViewById(R.id.txtActualDificulty);
+
+        mCalibrationView.setRobot(mRobot);
+
+        if(ACTUAL_DIFICULTY == EASY) {
+            txtDificulty.setText("EASY");
+            mRobot.setColor(0, 255, 0);
+        }
+
+        if(ACTUAL_DIFICULTY == MEDIUM) {
+            txtDificulty.setText("MEDIUM");
+            mRobot.setColor(255, 228, 0);
+        }
+
+        if(ACTUAL_DIFICULTY == HARD) {
+            txtDificulty.setText("HARD");
+            mRobot.setColor(255, 0, 0);
+        }
+        mNoSpheroConnectedView.setVisibility(View.GONE);
+        mNoSpheroConnectedView.switchToConnectButton();
 
     }
 
@@ -211,7 +250,10 @@ public class UiSampleActivity extends ControllerActivity {
         Log.d("", "registering Color Change Listener");
         IntentFilter filter = new IntentFilter(ColorPickerActivity.ACTION_COLOR_CHANGE);
         registerReceiver(mColorChangeReceiver, filter);
-        connectToBH();
+
+        IntentFilter filter2 = new IntentFilter(MainMenuFragment.ACTION_NEW_MEASURE);
+        registerReceiver(bcBHReceiver,filter2);
+
     }
 
     /**
@@ -220,7 +262,9 @@ public class UiSampleActivity extends ControllerActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        if (mColorPickerShowing) return;
+        if(mRobot!=null)
+            mRobot.stop();
+        /*if (mColorPickerShowing) return;
 
         // Disconnect Robot properly
         if (mRobot != null) {
@@ -229,16 +273,18 @@ public class UiSampleActivity extends ControllerActivity {
         try {
             unregisterReceiver(mColorChangeReceiver); // many times throws exception on leak
         } catch (Exception e) {
-        }
+        }*/
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        try {
+        if(mRobot!=null)
+            mRobot.stop();
+        /*try {
             unregisterReceiver(mColorChangeReceiver); // many times throws exception on leak
         } catch (Exception e) {
-        }
+        }*/
     }
 
     @Override
@@ -256,8 +302,8 @@ public class UiSampleActivity extends ControllerActivity {
                 mRobot.setColor(mRed, mGreen, mBlue);
             } else if (requestCode == BLUETOOTH_ENABLE_REQUEST) {
                 // User enabled bluetooth, so refresh Sphero list
-                mSpheroConnectionView.setVisibility(View.VISIBLE);
-                mSpheroConnectionView.startDiscovery();
+               //mSpheroConnectionView.setVisibility(View.VISIBLE);
+                //mSpheroConnectionView.startDiscovery();
             }
         } else {
             if (requestCode == STARTUP_ACTIVITY) {
@@ -270,8 +316,8 @@ public class UiSampleActivity extends ControllerActivity {
                         "Enable Bluetooth to Connect to Sphero", Toast.LENGTH_LONG).show();
             } else if (requestCode == BLUETOOTH_SETTINGS_REQUEST) {
                 // User enabled bluetooth, so refresh Sphero list
-                mSpheroConnectionView.setVisibility(View.VISIBLE);
-                mSpheroConnectionView.startDiscovery();
+               // mSpheroConnectionView.setVisibility(View.VISIBLE);
+               // mSpheroConnectionView.startDiscovery();
             }
         }
     }
@@ -311,137 +357,5 @@ public class UiSampleActivity extends ControllerActivity {
         return super.dispatchTouchEvent(event);
     }
 
-    /*
-    * BioHarness Section
-    */
 
-
-    //BH messages handler
-    final Handler Newhandler = new Handler() {
-        public void handleMessage(Message msg) {
-            TextView txtRate;
-            if (msg.what == RESPIRATION_RATE) {
-                String respirationRate = msg.getData().getString("RespirationRate");
-                txtRate = (TextView) findViewById(R.id.txtRate);
-                if (txtRate != null) {
-                    txtRate.setText(respirationRate);
-                    JoystickView.USER_CURRENT_BREATH_RATE = Double.parseDouble(respirationRate);
-                }
-            }
-        }
-    };
-
-    public void connectToBH(){
-        //Sending a message to android that we are going to initiate a pairing request
-        IntentFilter filter = new IntentFilter("android.bluetooth.device.action.PAIRING_REQUEST");
-
-        //Registering a new BTBroadcast receiver from the Main Activity context with pairing request event
-        this.getApplicationContext().registerReceiver(new BTBroadcastReceiver(), filter);
-
-        // Registering the BTBondReceiver in the application that the status of the receiver has changed to Paired
-        IntentFilter filter2 = new IntentFilter("android.bluetooth.device.action.BOND_STATE_CHANGED");
-        this.getApplicationContext().registerReceiver(new BTBondReceiver(), filter2);
-
-
-        TextView txtStatusMessage = (TextView) findViewById(R.id.txtRate);
-        String bhStatusMessage = "BioHarness Not Connected";
-        txtStatusMessage.setText(bhStatusMessage);
-
-        boolean hasPairedBHDevice = false;
-
-        String BhMacID = "00:07:80:9D:8A:E8"; //Random MAC address
-        btAdapter = BluetoothAdapter.getDefaultAdapter();
-
-        Set<BluetoothDevice> pairedDevices = btAdapter.getBondedDevices(); //Getting the paired devices. The device must be paired before
-
-        if (pairedDevices.size() > 0) {
-            for (BluetoothDevice device : pairedDevices) {
-                if (device.getName().startsWith("BH")) { //By this, will connect with the first found.
-                    BhMacID = device.getAddress();
-                    hasPairedBHDevice = true;
-                    break;
-                }
-            }
-        }
-
-        if (hasPairedBHDevice) {
-            BluetoothDevice Device = btAdapter.getRemoteDevice(BhMacID);
-            String DeviceName = Device.getName();
-            btClient = new BTClient(btAdapter, BhMacID); //Getting the BH bluetooth client
-            bhConnectedListener = new BHConnectedEventListener(Newhandler, Newhandler);
-
-            //Setup the BH bluetooth client with the listener
-            btClient.addConnectedEventListener(bhConnectedListener);
-
-            TextView txtBreathRate = (TextView) findViewById(R.id.txtRate);
-
-
-            if (btClient.IsConnected()) {
-                Log.i("Checkpoint","BH Connected: " + DeviceName);
-                btClient.start();
-                txtBreathRate.setText("Connected"); //This will be deleted by the next measure that it's ok
-                //txtStatusMessage = (TextView) findViewById(R.id.txtStatusMsg);
-                //bhStatusMessage = "Connected";
-                //txtStatusMessage.setText(bhStatusMessage);
-                isBioHarnessConected = true;
-                //Reset all the values to 0s
-
-            } else {// --------------------------------------------------------------       MANAGE THIS CASE AND THEL TO THE USER WHAT TO DO
-
-                txtStatusMessage = (TextView) findViewById(R.id.txtRate);
-                bhStatusMessage = "Unable to Connect!";
-                txtStatusMessage.setText(bhStatusMessage);
-                isBioHarnessConected = false;
-
-                //Do something like do you try again?
-            }
-
-        }else{
-            //-----------------------------------------------------------------------------NO PAIRED BIOHARNESS DEVICE AVAILABLE
-            // TRY TO DO THIS AT FIRST INSTANCE; BEFORE THE APPLICATION BEGINS. THE SAME With sphero
-            Toast.makeText(UiSampleActivity.this, "No paired BioHarness device available", Toast.LENGTH_LONG).show();
-        }
-    }
-
-    /*Auxiliar class for the pairing request*/
-    private class BTBondReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            Bundle b = intent.getExtras();
-            BluetoothDevice device = btAdapter.getRemoteDevice(b.get("android.bluetooth.device.extra.DEVICE").toString());
-            Log.d("Bond state", "BOND_STATED = " + device.getBondState());
-        }
-    }
-
-    /*Auxiliar class for the pairing request*/
-    private class BTBroadcastReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            Log.d("BTIntent", intent.getAction());
-            Bundle b = intent.getExtras();
-            Log.d("BTIntent", b.get("android.bluetooth.device.extra.DEVICE").toString());
-            Log.d("BTIntent", b.get("android.bluetooth.device.extra.PAIRING_VARIANT").toString());
-            try {
-                BluetoothDevice device = btAdapter.getRemoteDevice(b.get("android.bluetooth.device.extra.DEVICE").toString());
-                Method m = BluetoothDevice.class.getMethod("convertPinToBytes", new Class[] {String.class} );
-                byte[] pin = (byte[])m.invoke(device, "1234");
-                m = device.getClass().getMethod("setPin", new Class [] {pin.getClass()});
-                Object result = m.invoke(device, pin);
-                Log.d("BTTest", result.toString());
-            } catch (Exception e1) {
-                e1.printStackTrace();
-            }
-        }
-    }
-
-    public void disconectFromBH(){
-        TextView tv = (TextView) findViewById(R.id.txtRate);
-        String ErrorText  = "BioHarness not connected";
-        tv.setText(ErrorText);
-        //This disconnects listener from acting on received messages
-        btClient.removeConnectedEventListener(bhConnectedListener);
-        //Close the communication with the device & throw an exception if failure
-        btClient.Close();
-        isBioHarnessConected = false;
-    }
 }

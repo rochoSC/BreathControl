@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
+    android:layout_height="match_parent" tools:context="psi.tamu.controlyourbreath.MainMenuFragment"
+    android:background="#2C1B19">
+
+
+        <LinearLayout
+            android:padding="10dp"
+            android:layout_margin="10dp"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center_horizontal">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:background="@drawable/notice_box">
+
+                <LinearLayout
+                    android:paddingTop="15dp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center"
+                    android:id="@+id/layoutBreathRate">
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="BioHarness: "
+                        android:textSize="@dimen/abc_text_size_small_material"
+                        android:gravity="left"/>
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Not connected"
+                        android:textSize="@dimen/abc_text_size_small_material"
+                        android:id="@+id/txtBreathRateMenu"
+                        android:textColor="@android:color/holo_red_dark"
+                        android:gravity="left"/>
+                </LinearLayout>
+                <ToggleButton
+                    android:layout_width="40dp"
+                    android:layout_height="30dp"
+                    android:layout_marginRight="15dp"
+                    android:layout_marginBottom="8dp"
+                    android:textSize="10dp"
+                    android:layout_marginTop="10dp"
+                    android:text="New ToggleButton"
+                    android:id="@+id/tBtnTurnOnBH"
+                    android:layout_gravity="right"
+                    android:background="@drawable/toggle_button_background"
+                    />
+
+                <!--android:onClick="onClickConnectToBH"-->
+
+            </LinearLayout>
+            <LinearLayout
+                android:layout_marginTop="20dp"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:background="@android:color/white">
+
+
+
+                <ImageView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/logo_main_menu"/>
+
+                <Button
+                    android:layout_marginTop="60dp"
+                    android:layout_marginLeft="20dp"
+                    android:layout_marginRight="20dp"
+                    android:layout_marginBottom="20dp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:width="200dp"
+                    android:textColor="@android:color/black"
+                    android:text="I'm newbie"
+                    android:onClick="onClickEasy"
+                    android:id="@+id/btnEasy"
+                    />
+                <Button
+                    android:layout_marginTop="10dp"
+                    android:layout_marginLeft="20dp"
+                    android:layout_marginRight="20dp"
+                    android:layout_marginBottom="20dp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:width="200dp"
+                    android:textColor="@android:color/black"
+                    android:text="I feel like a sir"
+                    android:onClick="onClickMedium"
+                    android:id="@+id/btnMedium"/>
+                <Button
+                    android:layout_marginTop="10dp"
+                    android:layout_marginLeft="20dp"
+                    android:layout_marginRight="20dp"
+                    android:layout_width="wrap_content"
+                    android:width="200dp"
+                    android:layout_height="wrap_content"
+                    android:textColor="@android:color/black"
+                    android:text="THIS IS SPARTAAAA!"
+                    android:onClick="onClickHard"
+                    android:id="@+id/btnHard"/>
+            </LinearLayout>
+        </LinearLayout>
+
+</FrameLayout>

@@ -40,7 +40,7 @@ public class JoystickView extends View implements Controller {
     public final int HARD = 3;
     public final double HARD_BASE_SPEED= MAX_SCALED_SPEED * .80;
 
-    public int ACTUAL_LEVEL = this.MEDIUM; //The actual level of the game
+    public int ACTUAL_DIFICULTY = this.EASY; //The actual level of the game
 
     public double MAX_BREATH_RATE = 20; //This acts like the limit of the worst breathing rate for the user.
     public double MAX_IDEAL_BREATH_RATE = 8; //This acts like up limit of the best breathing rate for the user.
@@ -93,7 +93,9 @@ public class JoystickView extends View implements Controller {
 
     }
 
-
+    public void setDificulty(int dificulty){
+        this.ACTUAL_DIFICULTY= dificulty;
+    }
     public void setAlpha(float alpha){
         alpha = (alpha > 1)? 1: alpha;
         alpha = (alpha < 0)? 0: alpha;
@@ -301,7 +303,7 @@ public class JoystickView extends View implements Controller {
                             draggingPuckPointerId = pointer_id;
                             handled = true;
 
-                            switch (ACTUAL_LEVEL){
+                            switch (ACTUAL_DIFICULTY){
                                 case EASY:
                                     this.drive_control.setSpeedScale(this.EASY_BASE_SPEED);
                                     break;
@@ -372,7 +374,19 @@ public class JoystickView extends View implements Controller {
                 draggingPuck = false;
                 handled = true;
 
-                this.drive_control.stopDriving();
+                //Will only stop if the current rate don't exceed the ideal rate
+                if (USER_CURRENT_BREATH_RATE <= MAX_IDEAL_BREATH_RATE) {
+                    this.drive_control.stopDriving();
+                }else{
+                    if(ACTUAL_DIFICULTY == EASY) {//In other case, only if is in the easy mode
+                        this.drive_control.stopDriving();
+                    }else if(ACTUAL_DIFICULTY == MEDIUM && USER_CURRENT_BREATH_RATE <= (MAX_IDEAL_BREATH_RATE + 4)){
+                        //In this case, the robot will only stop if the user is under MAX_IDEAL_BREATH_RATE + 4
+                        this.drive_control.stopDriving();
+                    }
+                }
+
+                //In any case, if you return or close the app, the robot will stop instantly
 
                 if(mOnEndRunnable != null){
                     mOnEndRunnable.run();
@@ -435,7 +449,7 @@ public class JoystickView extends View implements Controller {
         int maxY = this.wheel.getBounds().height();
 
         if(percentOfExcess>0) {
-            switch (this.ACTUAL_LEVEL) {
+            switch (this.ACTUAL_DIFICULTY) {
                 case EASY:
 
                     //Alter speed. The speed will be chan
@@ -468,7 +482,7 @@ public class JoystickView extends View implements Controller {
             }
         }else{//Else, the user's breath rate must be under 8 so it's ok.
             //In this case, we will ensure that the speed it's acording to the level.
-            switch (this.ACTUAL_LEVEL) {
+            switch (this.ACTUAL_DIFICULTY) {
                 case EASY:
                     this.drive_control.setSpeedScale(this.EASY_BASE_SPEED);
                     break;

@@ -1,12 +1,10 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
-    android:layout_height="match_parent" android:paddingLeft="@dimen/activity_horizontal_margin"
-    android:paddingRight="@dimen/activity_horizontal_margin"
-    android:paddingTop="@dimen/activity_vertical_margin"
-    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:layout_height="match_parent"
     tools:context="psi.tamu.controlyourbreath.WelcomeActivity"
     android:onClick="onClickAnyWhere"
-    android:id="@+id/welcomeLayout">
+    android:id="@+id/welcomeLayout"
+    android:background="@drawable/background">
 
 
     <TextView
@@ -17,15 +15,44 @@
         android:id="@+id/textView3"
         android:layout_alignParentBottom="true"
         android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true" />
+        android:layout_alignParentEnd="true"
+        android:textColor="@android:color/white"/>
 
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Tutorial"
-        android:id="@+id/button2"
+        android:id="@+id/btnTutorial"
         android:layout_above="@+id/textView3"
         android:layout_centerHorizontal="true"
-        android:layout_marginBottom="61dp" />
+        android:layout_marginBottom="12dp"
+        android:onClick="onClickTutorial"/>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Refresh"
+        android:id="@+id/btnRefresh"
+        android:layout_above="@+id/textView3"
+        android:layout_marginBottom="12dp"
+        android:layout_alignParentRight="true"
+        android:layout_marginRight="12dp"
+        android:onClick="onClickRefresh"/>
+
+
+
+    <psi.tamu.controlyourbreath.orbotix.robot.widgets.NoSpheroConnectedView
+        android:id="@+id/no_sphero_connected_view"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:visibility="gone"/>
+
+    <orbotix.view.connection.SpheroConnectionView
+        android:id="@+id/sphero_connection_view"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:background="#A0000000"/>
+
+
 
 </RelativeLayout>
