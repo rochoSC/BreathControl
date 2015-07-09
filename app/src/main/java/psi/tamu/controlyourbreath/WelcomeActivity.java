@@ -8,9 +8,13 @@ import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+import android.widget.Button;
 import android.widget.Toast;
 
 import orbotix.robot.base.Robot;
@@ -23,14 +27,15 @@ public class WelcomeActivity extends ActionBarActivity implements TutorialFragme
 
     private SpheroConnectionView mSpheroConnectionView;
     public static Sphero mRobot;
+    Button btnRefresh;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_welcome);
-
 
         //mColorChangeReceiver
         // Set up the Sphero Connection View
@@ -49,7 +54,11 @@ public class WelcomeActivity extends ActionBarActivity implements TutorialFragme
                 ///////////////////////////////////////////////////////////////////mCalibrationView.setRobot(mRobot);
                 mRobot.setColor(0, 255, 0);
 
+                btnRefresh = (Button)findViewById(R.id.btnRefresh);
 
+                if(mRobot != null && mRobot.isConnected()){
+                    btnRefresh.setVisibility(View.GONE);
+                }
                 // Make connect sphero pop-up invisible if it was previously up
                 //mNoSpheroConnectedView.setVisibility(View.GONE);
                 //mNoSpheroConnectedView.switchToConnectButton();
@@ -66,7 +75,6 @@ public class WelcomeActivity extends ActionBarActivity implements TutorialFragme
             }
         });
     }
-
 
 
 
@@ -108,7 +116,16 @@ public class WelcomeActivity extends ActionBarActivity implements TutorialFragme
     }
 
 
-
+    @Override
+    public void onResume(){
+        btnRefresh = (Button)findViewById(R.id.btnRefresh);
+        super.onResume();
+        if(mRobot != null && mRobot.isConnected()){
+            btnRefresh.setVisibility(View.GONE);
+        }else{
+            btnRefresh.setVisibility(View.VISIBLE);
+        }
+    }
     /*@Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
@@ -129,6 +146,11 @@ public class WelcomeActivity extends ActionBarActivity implements TutorialFragme
 
         int count = getFragmentManager().getBackStackEntryCount();
 
+        // Disconnect Robot properly
+        if (mRobot != null) {
+            mRobot.disconnect();
+        }
+
         if (count == 0) {
             super.onBackPressed();
             //additional code
@@ -137,4 +159,6 @@ public class WelcomeActivity extends ActionBarActivity implements TutorialFragme
         }
 
     }
+
+
 }

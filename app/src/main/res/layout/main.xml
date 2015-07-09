@@ -8,23 +8,38 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:background="#FFF">
+    android:background="#3d0f15"
+    android:id="@+id/mainGuiLayout"
+    >
 
-  <Button
+ <!-- <Button
       android:id="@+id/color_button"
       style="@style/ControlButton"
       android:layout_alignParentRight="true"
       android:layout_alignParentTop="true"
       android:onClick="onColorClick"
-      android:text="Color"/>
+      android:text="Color"/>-->
 
+    <Button
+        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:textColor="@android:color/white"
+        android:textSize="35dp"
+        android:layout_marginBottom="40dp"
+        android:id="@+id/btnStop"
+        android:background="@drawable/button"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true"
+        android:onClick="onClickStop"
+        android:text="Stop"/>
   <Button
       android:id="@+id/sleep_button"
       style="@style/ControlButton"
       android:layout_alignParentLeft="true"
       android:layout_alignParentTop="true"
       android:onClick="onSleepClick"
-      android:text="Sleep"/>
+      android:text="Sleep"
+      android:visibility="gone"/>
 
   <psi.tamu.controlyourbreath.orbotix.robot.widgets.CalibrationImageButtonView
       android:id="@+id/calibration_image_button"
@@ -51,11 +66,13 @@
   <TextView
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
+      android:background="@drawable/background_box"
+      android:padding="6dp"
       android:text="Not connected"
       android:textAppearance="?android:attr/textAppearanceLarge"
-      android:textColor="@android:color/holo_red_dark"
+      android:textColor="@android:color/white"
       android:id="@+id/txtBreathRateGUI"
-      android:layout_below="@+id/color_button"
+      android:layout_below="@+id/btnStop"
       android:layout_centerHorizontal="true"/>
 
   <psi.tamu.controlyourbreath.orbotix.robot.widgets.joystick.JoystickView
@@ -64,6 +81,9 @@
       android:layout_height="250dp"
       android:layout_centerHorizontal="true"
       android:layout_centerVertical="true"
+      android:layout_below="@+id/txtBreathRateGUI"
+      android:layout_marginTop="50dp"
+      android:background="@drawable/notice_box"
       app:edge_overlap="20dp"
       app:puck_radius="30dp"/>
 
@@ -82,18 +102,92 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Dificulty"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        android:textColor="@android:color/holo_green_dark"
+        android:textSize="35dp"
+        android:background="@drawable/background_box"
+        android:textColor="@android:color/white"
         android:id="@+id/txtActualDificulty"
         android:layout_alignParentRight="true"
         android:layout_alignParentBottom="true"/>
-<!--
-      <orbotix.view.connection.SpheroConnectionView
-          android:id="@+id/sphero_connection_view"
-          android:layout_width="fill_parent"
-          android:layout_height="fill_parent"
-          android:background="#A0000000"/>
-    -->
+
+    <Chronometer
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/chronometer"
+        android:textColor="@android:color/white"
+        android:background="@drawable/background_box"
+        android:textSize="35dp"
+        android:layout_marginLeft="4dp"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentBottom="true"
+        android:visibility="visible"/>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/background_box"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        android:id="@+id/countDownLayout"
+        android:visibility="gone">
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/txtCountDown"
+        android:text="1"
+        android:textColor="@android:color/holo_red_light"
+        android:textSize="250dp"
+        android:gravity="center_horizontal|center_vertical"
+        android:visibility="gone"/>
+    </LinearLayout>
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/holo_red_dark"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:id="@+id/scoreLayout"
+        android:onClick="onClickFinalScore"
+        android:visibility="gone"
+        >
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/txtWellDone"
+            android:text="Well done!"
+            android:textColor="@android:color/holo_red_light"
+            android:textSize="60dp"
+            android:visibility="gone"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/txtWellDone2"
+            android:text="Your performance was"
+            android:textColor="@android:color/holo_red_light"
+            android:textSize="30dp"
+            android:gravity="center_horizontal|center_vertical"
+            android:visibility="gone"/>
+        <TextView
+            android:layout_marginTop="20dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/txtScore"
+            android:text="12%"
+            android:textColor="@android:color/white"
+            android:textSize="30dp"
+            android:gravity="center_horizontal|center_vertical"
+            android:visibility="gone"/>
+    </LinearLayout>
+
+
+
+    <!--
+          <orbotix.view.connection.SpheroConnectionView
+              android:id="@+id/sphero_connection_view"
+              android:layout_width="fill_parent"
+              android:layout_height="fill_parent"
+              android:background="#A0000000"/>
+        -->
 
 
 </RelativeLayout>

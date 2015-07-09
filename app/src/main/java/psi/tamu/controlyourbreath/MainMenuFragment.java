@@ -14,11 +14,21 @@ import android.app.Fragment;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.CompoundButton;
+import android.widget.EditText;
+import android.widget.FrameLayout;
+import android.widget.LinearLayout;
+import android.widget.NumberPicker;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
@@ -26,9 +36,6 @@ import android.widget.ToggleButton;
 import java.lang.reflect.Method;
 import java.util.Set;
 
-import orbotix.robot.base.Robot;
-import orbotix.sphero.Sphero;
-import psi.tamu.controlyourbreath.orbotix.robot.widgets.joystick.JoystickPuck;
 import psi.tamu.controlyourbreath.orbotix.robot.widgets.joystick.JoystickView;
 import psi.tamu.controlyourbreath.orbotix.uisample.UiSampleActivity;
 import zephyr.android.BioHarnessBT.BTClient;
@@ -46,13 +53,17 @@ public class MainMenuFragment extends Fragment {
     BluetoothAdapter btAdapter = null; //To work with Bluetooth
     BTClient btClient;
     BHConnectedEventListener bhConnectedListener;
+    ProgressBar progress;
+    LinearLayout mainMenuOptionsLayout;
+    FrameLayout mainMenuLayout;
+    NumberPicker numIdealRate;
 
     final int RESPIRATION_RATE = 0x101;
 
-    static boolean isBioHarnessConected = false;
+    public static boolean isBioHarnessConected = false;
 
     public MainMenuFragment() {
-        // Required empty public constructor
+
     }
 
 
@@ -62,8 +73,24 @@ public class MainMenuFragment extends Fragment {
         // Inflate the layout for this fragment
         myRootView = inflater.inflate(R.layout.fragment_main_menu, container, false);
         setListeners();
+        progress = (ProgressBar) myRootView.findViewById(R.id.mainMenuProgress);
+
+
+        numIdealRate = (NumberPicker) myRootView.findViewById(R.id.numIdealRate);
+        numIdealRate.setMinValue(4);
+        numIdealRate.setMaxValue(18);
+
+        numIdealRate.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
+            @Override
+            public void onValueChange(NumberPicker picker, int oldVal, int newVal) {
+                JoystickView.MAX_IDEAL_BREATH_RATE = newVal;
+            }
+        });
+
         return myRootView;
     }
+
+
 
     public void setListeners(){
         Button btn = (Button) myRootView.findViewById(R.id.btnEasy);
@@ -92,6 +119,16 @@ public class MainMenuFragment extends Fragment {
                 launchControlActivity(HARD);
             }
         });
+        btn = (Button) myRootView.findViewById(R.id.btnDropDown);
+        btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                onClickDropDownConf(v);
+            }
+        });
+
+
 
         /**
          * layoutBreathRate, hide if I can not connect
@@ -104,6 +141,7 @@ public class MainMenuFragment extends Fragment {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if(isChecked){
                     Toast.makeText(getActivity(), "Connecting BH", Toast.LENGTH_SHORT).show();
+                    progress.setVisibility(View.VISIBLE);
                     connectToBH();
                 }else{
                     if(isBioHarnessConected) {
@@ -114,11 +152,55 @@ public class MainMenuFragment extends Fragment {
                 }
             }
         });
+        mainMenuOptionsLayout= (LinearLayout) myRootView.findViewById(R.id.mainMenuOptionsLayout);
+
+        mainMenuOptionsLayout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //Do nothing. Just to make possible click outside this menu
+            }
+        });
+
+        mainMenuLayout = (FrameLayout) myRootView.findViewById(R.id.mainMenuLayout);
+
+        mainMenuLayout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //Toast.makeText(myRootView.getContext(), "FUERA", Toast.LENGTH_SHORT).show();
+               if (mainMenuOptionsLayout.getVisibility() == View.VISIBLE){
+                    Animation anim1 = AnimationUtils.loadAnimation(myRootView.getContext(), R.anim.dropdown_out);
+                    mainMenuOptionsLayout.startAnimation(anim1);
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                Thread.sleep(300);
+                            } catch (InterruptedException e) {
+                            }
+                            getActivity().runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    mainMenuOptionsLayout.setVisibility(View.GONE);
+                                }
+                            });
+                        }
+                    }).start();
+                }
+            }
+        });
+
+
+    }
+    public void onClickDropDownConf(View v){
+
+        Animation anim1 = AnimationUtils.loadAnimation(myRootView.getContext(), R.anim.dropdown_in);
+        mainMenuOptionsLayout.setVisibility(View.VISIBLE);
+        mainMenuOptionsLayout.startAnimation(anim1);
+        numIdealRate.setValue((int)JoystickView.MAX_IDEAL_BREATH_RATE);
     }
 
     public void launchControlActivity(int dificulty){
 
-        FragmentManager manager = getFragmentManager();
         Intent activityLanuncher = new Intent(getActivity(), UiSampleActivity.class);
 
 
@@ -138,8 +220,7 @@ public class MainMenuFragment extends Fragment {
         startActivity(activityLanuncher);
 
     }
-    // TODO: Rename method, update argument and hook method into UI event
-    //This is for interact with the ativity
+
     public void onButtonPressed(Uri uri) {
         if (mListener != null) {
             mListener.onFragmentInteraction(uri);
@@ -166,6 +247,11 @@ public class MainMenuFragment extends Fragment {
     public interface OnFragmentInteractionListener {
         public void onFragmentInteraction(Uri uri);
     }
+
+
+
+
+
 
     //BH messages handler
     final Handler Newhandler = new Handler() {
@@ -280,11 +366,13 @@ public class MainMenuFragment extends Fragment {
         if(isBioHarnessConected){
             bhStatusMessage = "Connected";
             tBtnTurnOnBH.setChecked(true);
+            Toast.makeText(getActivity(), "Connected", Toast.LENGTH_SHORT).show();
         }else{
             bhStatusMessage = "Not Connected";
             tBtnTurnOnBH.setChecked(false);
+            Toast.makeText(getActivity(), "Not Connected", Toast.LENGTH_SHORT).show();
         }
-
+        progress.setVisibility(View.GONE);
         txtStatusMessage.setText(bhStatusMessage);
     }
 
@@ -329,6 +417,8 @@ public class MainMenuFragment extends Fragment {
         btClient.Close();
         isBioHarnessConected = false;
     }
+
+
 
 
 }

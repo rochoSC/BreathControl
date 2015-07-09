@@ -42,8 +42,8 @@ public class JoystickView extends View implements Controller {
 
     public int ACTUAL_DIFICULTY = this.EASY; //The actual level of the game
 
-    public double MAX_BREATH_RATE = 20; //This acts like the limit of the worst breathing rate for the user.
-    public double MAX_IDEAL_BREATH_RATE = 8; //This acts like up limit of the best breathing rate for the user.
+    public static double MAX_BREATH_RATE = 20; //This acts like the limit of the worst breathing rate for the user.
+    public static double MAX_IDEAL_BREATH_RATE = 8; //This acts like up limit of the best breathing rate for the user.
     public static double USER_CURRENT_BREATH_RATE = 6; //This will be updated by BIOHarness
 
     //End of game parameters
@@ -337,8 +337,21 @@ public class JoystickView extends View implements Controller {
 
 
                 //Adjust drive coordinates for driving
-                Point drive_coord = this.getDrivePuckPosition(local_point);
+                final Point drive_coord = this.getDrivePuckPosition(local_point);
                 //Returns an alteratedCoord if breath is out of range
+                final int maxX = this.wheel.getBounds().width(); //This represent the max X possible coord on the wheel
+                final int maxY = this.wheel.getBounds().height();
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            Thread.sleep(2000);
+
+                            uncontrolledBoost(drive_coord.x,drive_coord.y,maxX,maxY);
+                        } catch (InterruptedException e) {
+                        }
+                    }
+                }).start();
                Point alteratedCoord = this.getAlteredCoord(drive_coord);
 
                 this.drive_control.driveJoyStick(alteratedCoord.x , alteratedCoord.y);
@@ -398,7 +411,45 @@ public class JoystickView extends View implements Controller {
             break;
         }
 	}
+    public void uncontrolledBoost(final int x, final int y, final int maxX, final int maxY){
+        //First, determine in which quadrant is the puck. Remember, here with the driver there is no negative values to the drive coords
 
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                int count = 0;
+                int centerX = maxX / 2;
+                int centerY = maxY / 2;
+                int finalX=0, finalY=0;
+
+                if(x >= centerX && y < centerY){//Quadrant 1. x btw 130 and 300. y btw 0 and 130
+                    finalX = maxX;
+                    finalY = 0;
+                }else if(x < centerX && y < centerY ){ //Quadrant 2.
+                    finalX = 0;
+                    finalY = 0;
+                }else if(x < centerX && y >= centerY){ //Quadrant 3.
+                    finalX = 0;
+                    finalY = maxY;
+                }else if(x >= centerX && y>= centerY){ //Quadrant 4.
+                    finalX = maxX;
+                    finalY = maxY;
+                }
+                while(count < 6){
+                    try {
+                        Thread.sleep(250);
+                    } catch (InterruptedException e) {
+                    }
+
+
+                    drive_control.setSpeedScale(.9);
+                    drive_control.driveJoyStick(finalX, finalY);
+                    count++;
+                }
+            }
+        }).start();
+    }
     //If breath rate is out of range, returns an altered coordinate according to the level of out of range and
     //the current game level (Easy, Medium, Hard). If breath is in range, return the same coord.
     public Point getAlteredCoord(Point actualPoint){

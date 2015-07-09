@@ -4,7 +4,7 @@
     tools:context="psi.tamu.controlyourbreath.WelcomeActivity"
     android:onClick="onClickAnyWhere"
     android:id="@+id/welcomeLayout"
-    android:background="@drawable/background">
+    android:background="@drawable/mascot_background">
 
 
     <TextView
@@ -12,31 +12,23 @@
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceSmall"
         android:text="...press anywhere to continue"
-        android:id="@+id/textView3"
+        android:id="@+id/txtPressAnywhere"
         android:layout_alignParentBottom="true"
         android:layout_alignParentRight="true"
         android:layout_alignParentEnd="true"
         android:textColor="@android:color/white"/>
 
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Tutorial"
-        android:id="@+id/btnTutorial"
-        android:layout_above="@+id/textView3"
-        android:layout_centerHorizontal="true"
-        android:layout_marginBottom="12dp"
-        android:onClick="onClickTutorial"/>
+
 
     <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Refresh"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:textColor="@android:color/white"
         android:id="@+id/btnRefresh"
-        android:layout_above="@+id/textView3"
+        android:layout_above="@+id/txtPressAnywhere"
         android:layout_marginBottom="12dp"
-        android:layout_alignParentRight="true"
-        android:layout_marginRight="12dp"
+        android:layout_centerHorizontal="true"
+        android:background="@drawable/refresh_button"
         android:onClick="onClickRefresh"/>
 
 

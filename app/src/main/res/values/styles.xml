@@ -239,4 +239,14 @@
         <item name="@android:windowEnterAnimation">@anim/appear</item>
         <item name="@android:windowExitAnimation">@anim/disappear</item>
     </style>
+
+
+    <!--Fonts-->}
+    <style name="ShadowFont1">
+        <item name="android:typeface">monospace</item>
+        <item name="android:shadowColor">#7F000000</item>
+        <item name="android:shadowDx">1</item>
+        <item name="android:shadowDy">1</item>
+        <item name="android:shadowRadius">2</item>
+    </style>
 </resources>

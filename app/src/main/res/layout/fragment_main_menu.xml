@@ -2,17 +2,30 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
     android:layout_height="match_parent" tools:context="psi.tamu.controlyourbreath.MainMenuFragment"
-    android:background="#2C1B19">
+    android:background="@drawable/main_menu_background"
+    android:id="@+id/mainMenuLayout"
+    >
+
 
 
         <LinearLayout
-            android:padding="10dp"
-            android:layout_margin="10dp"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
+            android:paddingBottom="10dp"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:layout_marginBottom="10dp"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical"
             android:gravity="center_horizontal">
-
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="25dp"
+                android:background="@drawable/dropdown"
+                android:layout_marginBottom="14dp"
+                android:id="@+id/btnDropDown"
+                android:gravity="center"/>
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -30,8 +43,11 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:textColor="@android:color/white"
                         android:text="BioHarness: "
                         android:textSize="@dimen/abc_text_size_small_material"
+                        android:textStyle="bold"
+                        style="@style/ShadowFont1"
                         android:gravity="left"/>
                     <TextView
                         android:layout_width="match_parent"
@@ -40,6 +56,7 @@
                         android:textSize="@dimen/abc_text_size_small_material"
                         android:id="@+id/txtBreathRateMenu"
                         android:textColor="@android:color/holo_red_dark"
+
                         android:gravity="left"/>
                 </LinearLayout>
                 <ToggleButton
@@ -64,7 +81,7 @@
                 android:layout_height="match_parent"
                 android:orientation="vertical"
                 android:gravity="center"
-                android:background="@android:color/white">
+                android:background="@drawable/background_box">
 
 
 
@@ -81,10 +98,11 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:width="200dp"
-                    android:textColor="@android:color/black"
+                    android:textColor="@android:color/white"
                     android:text="I'm newbie"
                     android:onClick="onClickEasy"
                     android:id="@+id/btnEasy"
+                    android:background="@drawable/button"
                     />
                 <Button
                     android:layout_marginTop="10dp"
@@ -94,10 +112,11 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:width="200dp"
-                    android:textColor="@android:color/black"
+                    android:textColor="@android:color/white"
                     android:text="I feel like a sir"
                     android:onClick="onClickMedium"
-                    android:id="@+id/btnMedium"/>
+                    android:id="@+id/btnMedium"
+                    android:background="@drawable/button"/>
                 <Button
                     android:layout_marginTop="10dp"
                     android:layout_marginLeft="20dp"
@@ -105,11 +124,66 @@
                     android:layout_width="wrap_content"
                     android:width="200dp"
                     android:layout_height="wrap_content"
-                    android:textColor="@android:color/black"
+                    android:textColor="@android:color/white"
                     android:text="THIS IS SPARTAAAA!"
                     android:onClick="onClickHard"
-                    android:id="@+id/btnHard"/>
+                    android:id="@+id/btnHard"
+                    android:background="@drawable/button"/>
             </LinearLayout>
         </LinearLayout>
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="20dp"
+        android:layout_marginLeft="15dp"
+        android:layout_marginRight="15dp"
+        android:layout_gravity="center_horizontal"
+        android:gravity="center_horizontal"
+        android:background="@drawable/config_background"
+        android:id="@+id/mainMenuOptionsLayout"
+        android:orientation="vertical"
+        android:visibility="gone">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
+            android:text="Configurations"
+            android:textColor="@android:color/white"
+            android:textSize="30dp"/>
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textStyle="bold"
+                android:textSize="18dp"
+                android:text="Ideal rate:"
+                android:layout_gravity="center_vertical"/>
+            <NumberPicker
+                android:layout_width="50dp"
+                android:layout_height="70dp"
+                android:id="@+id/numIdealRate"
+                android:background="#66FFFFFF"/>
+
+        </LinearLayout>
+
+
+
+    </LinearLayout>
+
+    <ProgressBar
+        android:id="@+id/mainMenuProgress"
+        style="@style/Widget.AppCompat.Spinner"
+        android:background="#CC000000"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:indeterminate="true"
+        android:keepScreenOn="false"
+        android:padding="50dp"
+        android:visibility="gone"
+        />
 </FrameLayout>
