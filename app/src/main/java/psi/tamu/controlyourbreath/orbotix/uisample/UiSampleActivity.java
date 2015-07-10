@@ -131,10 +131,15 @@ public class UiSampleActivity extends ControllerActivity {
         public void onReceive(Context context, Intent intent) {
             if(MainMenuFragment.isBioHarnessConected) {
                 String rate = intent.getStringExtra(MainMenuFragment.EXTRA_NEW_MEASURE);
-                if (Double.valueOf(rate) < JoystickView.MAX_IDEAL_BREATH_RATE)
+                if (Double.valueOf(rate) < JoystickView.MAX_IDEAL_BREATH_RATE) {
                     txtRate.setTextColor(Color.WHITE);
-                else
+                    if (mRobot !=null)
+                        mRobot.setColor(0, 255, 0);
+                }else {
                     txtRate.setTextColor(Color.RED);
+                    if (mRobot !=null)
+                        mRobot.setColor(255,0, 0);
+                }
                 txtRate.setText(rate);
             }
         }
@@ -254,18 +259,19 @@ public class UiSampleActivity extends ControllerActivity {
 
         if (ACTUAL_DIFICULTY == EASY) {
             txtDificulty.setText("EASY");
-            mRobot.setColor(0, 255, 0);
+
         }
 
         if (ACTUAL_DIFICULTY == MEDIUM) {
             txtDificulty.setText("MEDIUM");
-            mRobot.setColor(255, 228, 0);
+            //mRobot.setColor(255, 228, 0);
         }
 
         if (ACTUAL_DIFICULTY == HARD) {
             txtDificulty.setText("HARD");
-            mRobot.setColor(255, 0, 0);
+            //mRobot.setColor(255, 0, 0);
         }
+        mRobot.setColor(0, 255, 0);
         mNoSpheroConnectedView.setVisibility(View.GONE);
         mNoSpheroConnectedView.switchToConnectButton();
 
@@ -413,6 +419,13 @@ public class UiSampleActivity extends ControllerActivity {
 
     public void onClickFinalScore(View v){
         onBackPressed();
+    }
+
+    @Override
+    public void onBackPressed(){
+        super.onBackPressed();
+        if(mRobot != null)
+            mRobot.setColor(0, 0, 255);
     }
     public void scoreAnimation(){
           scoreLayout = (LinearLayout) findViewById(R.id.scoreLayout);

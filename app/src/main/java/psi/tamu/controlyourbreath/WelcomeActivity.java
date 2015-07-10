@@ -52,7 +52,7 @@ public class WelcomeActivity extends ActionBarActivity implements TutorialFragme
                //////////////////////////////////////////////////////////////////////////////// setRobot(mRobot);
                 // Make sure you let the calibration view knows the robot it should control
                 ///////////////////////////////////////////////////////////////////mCalibrationView.setRobot(mRobot);
-                mRobot.setColor(0, 255, 0);
+                mRobot.setColor(0, 0, 255);
 
                 btnRefresh = (Button)findViewById(R.id.btnRefresh);
 

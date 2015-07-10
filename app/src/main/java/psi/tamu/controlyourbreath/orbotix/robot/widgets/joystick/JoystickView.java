@@ -8,6 +8,7 @@ import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Toast;
 
 import java.util.Random;
 
@@ -89,6 +90,8 @@ public class JoystickView extends View implements Controller {
 
             //Get edge overlap
             this.puck_edge_overlap = (int)a.getDimension(R.styleable.JoystickView_edge_overlap, 10);
+
+
         }
 
     }
@@ -280,6 +283,10 @@ public class JoystickView extends View implements Controller {
         
         return ret;
     }
+    public boolean isUserControlAct = true;
+    public boolean flag = false;
+    public boolean isInvertedControls=false;
+    public boolean isUncontrolledActivated = false;
 
     @Override
 	public void interpretMotionEvent(MotionEvent event) {
@@ -321,6 +328,21 @@ public class JoystickView extends View implements Controller {
 
                             this.drive_control.startDriving(this.getContext(), DriveControl.JOY_STICK);
 
+                            if(!isUncontrolledActivated) {
+                                activateUncontrolledMoves();
+                                isUncontrolledActivated = true;
+                            }
+                            /*new Thread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    try {
+                                        Thread.sleep(3000);
+                                        isUserControlAct = false;
+
+                                    } catch (InterruptedException e) {
+                                    }
+                                }
+                            }).start();*/
                         }
 
                         if(mOnStartRunnable != null){
@@ -338,33 +360,30 @@ public class JoystickView extends View implements Controller {
 
                 //Adjust drive coordinates for driving
                 final Point drive_coord = this.getDrivePuckPosition(local_point);
+                actualPoint = drive_coord;
                 //Returns an alteratedCoord if breath is out of range
                 final int maxX = this.wheel.getBounds().width(); //This represent the max X possible coord on the wheel
                 final int maxY = this.wheel.getBounds().height();
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            Thread.sleep(2000);
-
-                            uncontrolledBoost(drive_coord.x,drive_coord.y,maxX,maxY);
-                        } catch (InterruptedException e) {
-                        }
+                if(isUserControlAct){
+                    Point alteratedCoord;
+                    if(isInvertedControls){
+                        alteratedCoord = uncInvertedDriving(drive_coord.x,drive_coord.y,maxX,maxY);
+                    }else{
+                        alteratedCoord = this.getAlteredCoord(drive_coord);
                     }
-                }).start();
-               Point alteratedCoord = this.getAlteredCoord(drive_coord);
+                    this.drive_control.driveJoyStick(alteratedCoord.x , alteratedCoord.y);
+                }
+                /*else{//Another type of feedback is already happening.
+                    if(!flag) {
+                        //uncBoost(drive_coord.x, drive_coord.y, maxX, maxY);
+                        //uncStop();
+                        //uncBackwardBoost(drive_coord.x, drive_coord.y, maxX, maxY);v
+                        uncRoll(maxX,maxY);
+                        flag = true;
+                    }
+                }*/
 
-                this.drive_control.driveJoyStick(alteratedCoord.x , alteratedCoord.y);
                 //this.drive_control.driveJoyStick(drive_coord.x , drive_coord.y);
-
-
-
-                //int xNoise = randomNoise.nextInt()%150;
-               // int yNoise = randomNoise.nextInt() % 150;
-               // drive_control.driveJoyStick(ACTUAL_X + x,ACTUAL_Y + y);
-
-
-
                 //Set the puck position to within the bounds of the wheel
                 final Point i = getValidPuckPosition(local_point);
                 local_point.set(i.x, i.y);
@@ -398,6 +417,7 @@ public class JoystickView extends View implements Controller {
                         this.drive_control.stopDriving();
                     }
                 }
+                isUncontrolledActivated = false;
 
                 //In any case, if you return or close the app, the robot will stop instantly
 
@@ -411,7 +431,112 @@ public class JoystickView extends View implements Controller {
             break;
         }
 	}
-    public void uncontrolledBoost(final int x, final int y, final int maxX, final int maxY){
+    public Point actualPoint;
+    public void activateUncontrolledMoves(){
+        /*
+        This will be a thread where each random amount of seconds will result into a random
+        movement with intensity according to the game level and the level of breathing rate.
+        */
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                actualPoint = new Point();
+                actualPoint.x=0;
+                actualPoint.y=0;
+                final int maxX = wheel.getBounds().width(); //This represent the max X possible coord on the wheel
+                final int maxY = wheel.getBounds().height();
+                int timeBtwnMvmnts = 5000;
+                while(true){
+
+                    try {
+                        Thread.sleep(timeBtwnMvmnts);//
+                    } catch (InterruptedException e) {
+
+                    }
+                    if(isUncontrolledActivated){
+
+
+
+                        double userCurrentSnap = USER_CURRENT_BREATH_RATE;
+
+                        //Consider 6-8, MAX_IDEAL_BREATH_RATE (8) will be the max
+                        double referenceDistance = MAX_BREATH_RATE - MAX_IDEAL_BREATH_RATE;
+                        double myRateExcess = userCurrentSnap - MAX_IDEAL_BREATH_RATE;
+                        double relationPreferedActual = myRateExcess / referenceDistance;
+                        double percentOfExcess = relationPreferedActual * 100;
+
+                        Random r = new Random();
+                        if(percentOfExcess < 40 && percentOfExcess > 10){ //A little error margin to make it easier
+                            //Boost, stop, roll , inverted. probabilities (70,16,10,4)
+                            int diceRolled = r.nextInt(100); //This works as the "probability"
+                            if(diceRolled < 4){// 4% inverted
+                                /*Enable inverted controlling. Determine how much time is this going to last.
+                                Not more than the time between each movement.*/
+                                final int duration = new Random().nextInt(timeBtwnMvmnts-1000)+1000;
+                                invertControls(duration);
+                            }else if(diceRolled >= 4 && diceRolled <14){ // 10% roll
+                                uncRoll(maxX,maxY);
+                            }else if(diceRolled >= 14 && diceRolled <30){ // 16% stop
+                                uncStop();
+                            }else if(diceRolled >= 30 && diceRolled <100){ // 70% boost
+                                int whichBoost = new Random().nextInt(1);
+                                if(whichBoost == 0)
+                                    uncBackwardBoost(actualPoint.x,actualPoint.y,maxX,maxY);
+                                else
+                                    uncForwardBoost(actualPoint.x,actualPoint.y,maxX,maxY);
+                            }
+                            timeBtwnMvmnts = 8000;
+                        }else if(percentOfExcess < 60  && percentOfExcess > 10){
+                            //Boost, stop, roll , inverted. probabilities (45,30,15,10)
+                            int diceRolled = r.nextInt(100);
+                            if(diceRolled < 10){// 10% inverted
+                                final int duration = new Random().nextInt(timeBtwnMvmnts-1000)+1000;
+                                invertControls(duration);
+                            }else if(diceRolled >= 10 && diceRolled <25){ // 15% roll
+                                uncRoll(maxX,maxY);
+                            }else if(diceRolled >= 25 && diceRolled <55){ // 30% stop
+                                uncStop();
+                            }else if(diceRolled >= 55 && diceRolled <100){ // 45% boost
+                                int whichBoost = new Random().nextInt(1);
+                                if(whichBoost == 0)
+                                    uncBackwardBoost(actualPoint.x,actualPoint.y,maxX,maxY);
+                                else
+                                    uncForwardBoost(actualPoint.x,actualPoint.y,maxX,maxY);
+                            }
+                            timeBtwnMvmnts = 6700;
+                        }else if( percentOfExcess > 10){//Percent > 60
+                            //Boost, stop, roll , inverted. probabilities (5,10,25,60)
+                            int diceRolled = r.nextInt(100);
+                            if(diceRolled < 60){// 60% inverted
+                                final int duration = new Random().nextInt(timeBtwnMvmnts-1000)+1000;
+                                invertControls(duration);
+                            }else if(diceRolled >= 60 && diceRolled <85){ // 25% roll
+                                uncRoll(maxX,maxY);
+                            }else if(diceRolled >= 85 && diceRolled <95){ // 10% stop
+                                uncStop();
+                            }else if(diceRolled >= 95 && diceRolled <100){ // 5% boost
+                                int whichBoost = new Random().nextInt(1);
+                                if(whichBoost == 0)
+                                    uncBackwardBoost(actualPoint.x,actualPoint.y,maxX,maxY);
+                                else
+                                    uncForwardBoost(actualPoint.x,actualPoint.y,maxX,maxY);
+                            }
+                            timeBtwnMvmnts = 5000;
+                        }
+
+                    }else{
+                        break;
+                    }
+                }
+            }
+        }).start();
+    }
+
+    //Uncontrolled feedback
+
+    //Weak ones (Low BR)
+    public void uncForwardBoost(final int x, final int y, final int maxX, final int maxY){
         //First, determine in which quadrant is the puck. Remember, here with the driver there is no negative values to the drive coords
 
 
@@ -422,6 +547,13 @@ public class JoystickView extends View implements Controller {
                 int centerX = maxX / 2;
                 int centerY = maxY / 2;
                 int finalX=0, finalY=0;
+                int time = 1;
+                if(ACTUAL_DIFICULTY == EASY)
+                    time = 1;
+                if(ACTUAL_DIFICULTY == MEDIUM)
+                    time = 2;
+                if(ACTUAL_DIFICULTY == HARD)
+                    time = 3;
 
                 if(x >= centerX && y < centerY){//Quadrant 1. x btw 130 and 300. y btw 0 and 130
                     finalX = maxX;
@@ -436,20 +568,191 @@ public class JoystickView extends View implements Controller {
                     finalX = maxX;
                     finalY = maxY;
                 }
-                while(count < 6){
+                while(count < time){//Time of boost
+
+                    drive_control.stopDriving();
+                    drive_control.setSpeedScale(MAX_SCALED_SPEED);
+                    drive_control.startDriving(getContext(), DriveControl.JOY_STICK);
+                    drive_control.driveJoyStick(finalX, finalY);
                     try {
-                        Thread.sleep(250);
+                        Thread.sleep(100);
                     } catch (InterruptedException e) {
                     }
-
-
-                    drive_control.setSpeedScale(.9);
-                    drive_control.driveJoyStick(finalX, finalY);
                     count++;
                 }
+                restoreValues();
             }
         }).start();
     }
+
+    public void uncBackwardBoost(final int x, final int y, final int maxX, final int maxY){
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                int count = 0;
+                int centerX = maxX / 2;
+                int centerY = maxY / 2;
+                int finalX=0, finalY=0;
+                int time = 3;
+                if(ACTUAL_DIFICULTY == EASY)
+                    time = 3;
+                if(ACTUAL_DIFICULTY == MEDIUM)
+                    time = 4;
+                if(ACTUAL_DIFICULTY == HARD)
+                    time = 6;
+
+                if(x >= centerX && y < centerY){//Quadrant 1. x btw 155 and 310. y btw 0 and 155
+                    //Go to 3
+                    finalX = 0;
+                    finalY = maxY;
+                }else if(x < centerX && y < centerY ){ //Quadrant 2.
+                    //Go to 4
+                    finalX = maxX;
+                    finalY = maxY;
+                }else if(x < centerX && y >= centerY){ //Quadrant 3.
+                    //Go to 1
+                    finalX = maxX;
+                    finalY = 0;
+                }else if(x >= centerX && y>= centerY){ //Quadrant 4.
+                    //Go to 2
+                    finalX = 0;
+                    finalY = 0;
+                }
+                while(count < time){
+
+                    drive_control.stopDriving();
+                    drive_control.setSpeedScale(MAX_SCALED_SPEED);
+                    drive_control.startDriving(getContext(), DriveControl.JOY_STICK);
+                    drive_control.driveJoyStick(finalX, finalY);
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                    }
+                    count++;
+                }
+                restoreValues();
+            }
+        }).start();
+    }
+
+    //Medium (Medium BR)
+    public void uncStop(){
+        int time = 7;
+        if(ACTUAL_DIFICULTY == EASY)
+            time = 7;
+        if(ACTUAL_DIFICULTY == MEDIUM)
+            time = 12;
+        if(ACTUAL_DIFICULTY == HARD)
+            time = 16;
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                int count = 0;
+                while(count < 15) {
+                    drive_control.stopDriving();
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+
+                    }
+                    count++;
+                }
+                restoreValues();
+            }
+        }).start();
+    }
+
+    //Strong ones (High BR)
+    public Point uncInvertedDriving(final int x, final int y, final int maxX, final int maxY){
+        Point p = new Point();
+        int centerX = maxX / 2;
+        int centerY = maxY / 2;
+        int finalX=0, finalY=0;
+
+        if(x >= centerX && y < centerY){//Quadrant 1. x btw 155 and 310. y btw 0 and 155
+            //Go to 3
+            finalX = maxX - x;
+            finalY = maxY - y;
+        }else if(x < centerX && y < centerY ){ //Quadrant 2.
+            //Go to 4
+            finalX = maxX - x;
+            finalY = maxY - y;
+        }else if(x < centerX && y >= centerY){ //Quadrant 3.
+            //Go to 1
+            finalX = maxX - x;
+            finalY = maxY-y;
+        }else if(x >= centerX && y>= centerY){ //Quadrant 4.
+            //Go to 2
+            finalX = maxX-x;
+            finalY = maxY-y;
+        }
+        p.x = finalX;
+        p.y = finalY;
+        return p;
+    }
+
+    public void uncRoll(final int maxX, final int maxY){
+        new Thread(new Runnable() {
+            @Override
+            public void run()  {
+                int time = 700;
+
+                drive_control.stopDriving();
+                drive_control.setSpeedScale(EASY_BASE_SPEED +.05);
+                drive_control.startDriving(getContext(), DriveControl.JOY_STICK);
+
+                drive_control.driveJoyStick(maxX, 0);
+                try {
+                    Thread.sleep(time);
+                } catch (InterruptedException e) { }
+
+                drive_control.driveJoyStick(0, 0);
+                try {
+                    Thread.sleep(time);
+                } catch (InterruptedException e) { }
+
+                drive_control.driveJoyStick(0, maxY);
+                try {
+                    Thread.sleep(time);
+                } catch (InterruptedException e) { }
+
+                drive_control.driveJoyStick(maxX, maxY);
+                try {
+                    Thread.sleep(time);
+                } catch (InterruptedException e) { }
+                restoreValues();
+            }
+        }).start();
+    }
+
+    public void restoreValues(){
+        drive_control.stopDriving();
+        if(ACTUAL_DIFICULTY == EASY)
+            drive_control.setSpeedScale(EASY_BASE_SPEED);
+        if(ACTUAL_DIFICULTY == MEDIUM)
+            drive_control.setSpeedScale(MEDIUM);
+        if(ACTUAL_DIFICULTY == HARD)
+            drive_control.setSpeedScale(HARD);
+        drive_control.startDriving(getContext(), DriveControl.JOY_STICK);
+        isUserControlAct=true;
+    }
+
+    public void invertControls(final int duration){
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                isInvertedControls = true;
+                try {
+                    Thread.sleep(duration);
+                } catch (InterruptedException e) {
+
+                }
+                isInvertedControls = false;
+            }
+        }).start();
+    }
+    //End of uncontrolled feedback
+
     //If breath rate is out of range, returns an altered coordinate according to the level of out of range and
     //the current game level (Easy, Medium, Hard). If breath is in range, return the same coord.
     public Point getAlteredCoord(Point actualPoint){
@@ -503,7 +806,7 @@ public class JoystickView extends View implements Controller {
             switch (this.ACTUAL_DIFICULTY) {
                 case EASY:
 
-                    //Alter speed. The speed will be chan
+                    //Alter speed. The speed will be changed
                     maxSpeed =EASY_BASE_SPEED + mxSpdInc;
                     b = EASY_BASE_SPEED; //Minimum
                     a = (maxSpeed - b)/(100*100); //Maximum
@@ -547,17 +850,7 @@ public class JoystickView extends View implements Controller {
         }
         return alteratedPoint;
     }
-    public double pow(double value, int power){
-        if(power == 0){
-            return 1;
-        }
-
-        double result = value;
-        for(int i = 0; i < power -1; i++){
-            result = result * value;
-        }
-        return result;
-    }
+    
     public Point getFinalPoint(int maxX, int maxY, double noise, double percentOfExcess, int x, int y){
         Point alteredPoint = new Point();
         //Alter coords
@@ -615,7 +908,7 @@ public class JoystickView extends View implements Controller {
 
         int noiseAdjusted = rand.nextInt((max - min) + 1) + min;
 
-        //Lets make it odd, or even.
+        //Lets make it positive, or negative.
         if(rand.nextInt(2) == 0)
            noiseAdjusted = noiseAdjusted * (-1);
 
