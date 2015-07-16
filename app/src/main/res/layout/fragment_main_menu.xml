@@ -14,7 +14,7 @@
             android:paddingBottom="10dp"
             android:layout_marginLeft="10dp"
             android:layout_marginRight="10dp"
-            android:layout_marginBottom="10dp"
+            android:layout_marginBottom="0dp"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical"
@@ -78,7 +78,9 @@
             <LinearLayout
                 android:layout_marginTop="20dp"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"
                 android:orientation="vertical"
                 android:gravity="center"
                 android:background="@drawable/background_box">
@@ -91,7 +93,7 @@
                     android:src="@drawable/logo_main_menu"/>
 
                 <Button
-                    android:layout_marginTop="60dp"
+                    android:layout_marginTop="30dp"
                     android:layout_marginLeft="20dp"
                     android:layout_marginRight="20dp"
                     android:layout_marginBottom="20dp"
@@ -129,6 +131,26 @@
                     android:onClick="onClickHard"
                     android:id="@+id/btnHard"
                     android:background="@drawable/button"/>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:gravity="bottom"
+                android:orientation="horizontal"
+                >
+                <CheckBox
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginRight="10dp"
+                    android:id="@+id/chRecord"
+                    android:text="Record"/>
+                <CheckBox
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/chNoise"
+                    android:text="Noise"/>
             </LinearLayout>
         </LinearLayout>
 
@@ -159,6 +181,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginRight="10dp"
                 android:textStyle="bold"
                 android:textSize="18dp"
                 android:text="Ideal rate:"
@@ -170,7 +193,6 @@
                 android:background="#66FFFFFF"/>
 
         </LinearLayout>
-
 
 
     </LinearLayout>

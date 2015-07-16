@@ -1,33 +1,26 @@
 package psi.tamu.controlyourbreath;
 
-import android.app.FragmentManager;
-import android.app.FragmentTransaction;
-import android.content.Intent;
 import android.net.Uri;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
-import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
 import android.widget.Button;
-import android.widget.Toast;
 
 import orbotix.robot.base.Robot;
 import orbotix.sphero.ConnectionListener;
 import orbotix.sphero.Sphero;
 import orbotix.view.connection.SpheroConnectionView;
-import psi.tamu.controlyourbreath.orbotix.uisample.UiSampleActivity;
+import psi.tamu.controlyourbreath.orbotix.controlui.MainControlUI;
 
-public class WelcomeActivity extends ActionBarActivity implements TutorialFragment.OnFragmentInteractionListener, MainMenuFragment.OnFragmentInteractionListener {
+public class WelcomeActivity extends ActionBarActivity implements MainMenuFragment.OnFragmentInteractionListener {
 
     private SpheroConnectionView mSpheroConnectionView;
     public static Sphero mRobot;
     Button btnRefresh;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -49,14 +42,14 @@ public class WelcomeActivity extends ActionBarActivity implements TutorialFragme
                 // Set Robot
                 mRobot = (Sphero) robot; // safe to cast for now
                 //Set connected Robot to the Controllers
-               //////////////////////////////////////////////////////////////////////////////// setRobot(mRobot);
+                //////////////////////////////////////////////////////////////////////////////// setRobot(mRobot);
                 // Make sure you let the calibration view knows the robot it should control
                 ///////////////////////////////////////////////////////////////////mCalibrationView.setRobot(mRobot);
                 mRobot.setColor(0, 0, 255);
 
-                btnRefresh = (Button)findViewById(R.id.btnRefresh);
+                btnRefresh = (Button) findViewById(R.id.btnRefresh);
 
-                if(mRobot != null && mRobot.isConnected()){
+                if (mRobot != null && mRobot.isConnected()) {
                     btnRefresh.setVisibility(View.GONE);
                 }
                 // Make connect sphero pop-up invisible if it was previously up
@@ -77,7 +70,6 @@ public class WelcomeActivity extends ActionBarActivity implements TutorialFragme
     }
 
 
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -85,31 +77,25 @@ public class WelcomeActivity extends ActionBarActivity implements TutorialFragme
         return true;
     }
 
-    public void onClickAnyWhere(View v){
-       // FragmentManager manager = getFragmentManager();
-       // Intent activityLanuncher = new Intent(this, UiSampleActivity.class);
+    public void onClickAnyWhere(View v) {
+        // FragmentManager manager = getFragmentManager();
+        // Intent activityLanuncher = new Intent(this, UiSampleActivity.class);
         //startActivity(activityLanuncher);
 
-        if(mRobot!=null) {
+        if (mRobot != null) {
             MainMenuFragment fragment = new MainMenuFragment();
             //fragment.setSpheroRobot(mRobot);
-            UiSampleActivity.mRobot = this.mRobot;
+            MainControlUI.mRobot = this.mRobot; //Setting the static variable of the robot
             fragment.setArguments(getIntent().getExtras());
             getFragmentManager().beginTransaction().add(android.R.id.content, fragment).addToBackStack("mainmenu_fragment").commit();
         }
     }
 
-    public void onClickTutorial(View v){
-        TutorialFragment fragment = new TutorialFragment();
-        fragment.setArguments(getIntent().getExtras());
-        getFragmentManager().beginTransaction().add(android.R.id.content, fragment).addToBackStack("fragment_tutorial").commit();
-
-    }
-
-    public void onClickRefresh(View v){
-        if(mSpheroConnectionView != null)
+    public void onClickRefresh(View v) {
+        if (mSpheroConnectionView != null)
             mSpheroConnectionView.startDiscovery();
     }
+
     @Override
     public void onFragmentInteraction(Uri uri) {
 
@@ -117,12 +103,12 @@ public class WelcomeActivity extends ActionBarActivity implements TutorialFragme
 
 
     @Override
-    public void onResume(){
-        btnRefresh = (Button)findViewById(R.id.btnRefresh);
+    public void onResume() {
+        btnRefresh = (Button) findViewById(R.id.btnRefresh);
         super.onResume();
-        if(mRobot != null && mRobot.isConnected()){
+        if (mRobot != null && mRobot.isConnected()) {
             btnRefresh.setVisibility(View.GONE);
-        }else{
+        } else {
             btnRefresh.setVisibility(View.VISIBLE);
         }
     }

@@ -1,20 +1,18 @@
-package psi.tamu.controlyourbreath.orbotix.uisample;
+package psi.tamu.controlyourbreath.orbotix.controlui;
 
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Color;
+import android.media.MediaScannerConnection;
+import android.net.Uri;
 import android.os.Bundle;
-import android.os.CountDownTimer;
-import android.os.Handler;
-import android.os.Message;
+import android.os.Environment;
 import android.os.SystemClock;
 import android.provider.Settings;
+import android.text.format.Time;
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.animation.Animation;
@@ -22,42 +20,34 @@ import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.Chronometer;
 import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.w3c.dom.Text;
-
-import java.lang.reflect.Method;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
+import java.util.Date;
 
-import orbotix.macro.Sleep;
-import psi.tamu.controlyourbreath.BHConnectedEventListener;
 import psi.tamu.controlyourbreath.MainMenuFragment;
 import psi.tamu.controlyourbreath.R;
-import psi.tamu.controlyourbreath.WelcomeActivity;
 import psi.tamu.controlyourbreath.orbotix.robot.app.ColorPickerActivity;
-import orbotix.robot.base.Robot;
 import psi.tamu.controlyourbreath.orbotix.robot.widgets.CalibrationImageButtonView;
 import psi.tamu.controlyourbreath.orbotix.robot.widgets.NoSpheroConnectedView;
 import psi.tamu.controlyourbreath.orbotix.robot.widgets.NoSpheroConnectedView.OnConnectButtonClickListener;
 import psi.tamu.controlyourbreath.orbotix.robot.widgets.SlideToSleepView;
 import psi.tamu.controlyourbreath.orbotix.robot.widgets.joystick.JoystickView;
-import orbotix.sphero.ConnectionListener;
 import orbotix.sphero.Sphero;
 import orbotix.view.calibration.CalibrationView;
 import orbotix.view.calibration.ControllerActivity;
-import orbotix.view.connection.SpheroConnectionView;
-import zephyr.android.BioHarnessBT.BTClient;
 
-public class UiSampleActivity extends ControllerActivity {
+public class MainControlUI extends ControllerActivity {
 
 
-    public final int EASY = 1, MEDIUM = 2, HARD = 3;
-    public int ACTUAL_DIFICULTY = EASY;
+    public final String DIR_NAME = "BreathControl_Records";
+    public final String FILE_NAME = "Records.csv";
+
     /**
      * ID to start the StartupActivity for result to connect the Robot
      */
@@ -72,7 +62,8 @@ public class UiSampleActivity extends ControllerActivity {
     private boolean mColorPickerShowing = false;
 
     /**
-     * The Robot to control
+     * The Robot to control.
+     * ROBOT is STATIC for any object generated. This object must be initialized before this activity start.
      */
     static public Sphero mRobot;
 
@@ -96,13 +87,16 @@ public class UiSampleActivity extends ControllerActivity {
      */
     private NoSpheroConnectedView mNoSpheroConnectedView;
 
+    /**
+     * General views
+     */
     private TextView countDownView;
-
     private JoystickView joystick;
-
     public Chronometer chronometer;
-
     public TextView txtRate;
+    public LinearLayout scoreLayout;
+    public TextView txtScore;
+    public LinearLayout countdownLayout;
 
     public Button btnStop;
 
@@ -111,8 +105,33 @@ public class UiSampleActivity extends ControllerActivity {
     private int mGreen = 0xff;
     private int mBlue = 0xff;
 
+    //Files
+    public String root = "";
+    public String dirPath = "";
+    public String filePath = "";
+    public File dir;
+    public File file;
 
-    //To receive the colors provided by the user through the color picker.
+
+    /**
+     * Control variables.
+     */
+    public final int EASY = 1, MEDIUM = 2, HARD = 3;
+    public int ACTUAL_DIFICULTY = EASY;
+
+    //To determine whether  the robot will receive noise or not.
+    public boolean isRecordEnabled;
+    public boolean isNoiseEnabled;
+
+    boolean firstTickControl = true;
+    public ArrayList<Double> gameMeasuresPerSecond = new ArrayList<>();
+    public int timesUnderIdealBR = 0;
+    public double minBR = 9999.9;
+    public double maxBR = 0.0;
+    public double measuresSum = 0;
+    public int measuresNum = 0;
+
+    //To receive the colors provided by the user through the color picker. NOT ENABLED FOR THIS PROJECT
     BroadcastReceiver mColorChangeReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -126,79 +145,40 @@ public class UiSampleActivity extends ControllerActivity {
         }
     };
 
+    /**
+     * Receiver for the measures of the BioHarness
+     */
     BroadcastReceiver bcBHReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            if(MainMenuFragment.isBioHarnessConected) {
+            if (MainMenuFragment.isBioHarnessConected) {
                 String rate = intent.getStringExtra(MainMenuFragment.EXTRA_NEW_MEASURE);
                 if (Double.valueOf(rate) < JoystickView.MAX_IDEAL_BREATH_RATE) {
                     txtRate.setTextColor(Color.WHITE);
-                    if (mRobot !=null)
+                    if (mRobot != null)
                         mRobot.setColor(0, 255, 0);
-                }else {
+                } else {
                     txtRate.setTextColor(Color.RED);
-                    if (mRobot !=null)
-                        mRobot.setColor(255,0, 0);
+                    if (mRobot != null)
+                        mRobot.setColor(255, 0, 0);
                 }
                 txtRate.setText(rate);
             }
         }
     };
 
-    /**
-     * Called when the activity is first created.
-     */
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.main);
+
         ACTUAL_DIFICULTY = getIntent().getIntExtra("dificulty", EASY);
-
-
         countDownView = (TextView) findViewById(R.id.txtCountDown);
         chronometer = (Chronometer) findViewById(R.id.chronometer);
         txtRate = (TextView) findViewById(R.id.txtBreathRateGUI);
         btnStop = (Button) findViewById(R.id.btnStop);
-
-        // Set up the Sphero Connection View
-        //mSpheroConnectionView = (SpheroConnectionView) findViewById(R.id.sphero_connection_view);
-        //When we get the view, instantly launches "StartDiscovery" and shows the view <---NOTE
-        //When a connection is accepted, automatically hides the view.
-        //mSpheroConnectionView.addConnectionListener(new ConnectionListener() {
-
-        //Robot r  = getIntent().getParcelableExtra("robot");
-        //mRobot = (Sphero)r;
-        //setRobot(mRobot);
-        // Make sure you let the calibration view knows the robot it should control
-
-        //mRobot.setColor(0, 255, 0);
-         /*   public void onConnected(Robot robot) {
-                // Set Robot
-                mRobot = (Sphero) robot; // safe to cast for now
-                //Set connected Robot to the Controllers
-                setRobot(mRobot);
-                // Make sure you let the calibration view knows the robot it should control
-                mCalibrationView.setRobot(mRobot);
-                mRobot.setColor(0, 255, 0);
-
-
-                // Make connect sphero pop-up invisible if it was previously up
-                mNoSpheroConnectedView.setVisibility(View.GONE);
-                mNoSpheroConnectedView.switchToConnectButton();
-            }
-
-            @Override
-            public void onConnectionFailed(Robot sphero) {
-                // let the SpheroConnectionView handle or hide it and do something here...
-            }
-
-            @Override
-            public void onDisconnected(Robot sphero) {
-                mSpheroConnectionView.startDiscovery();
-            }
-        });*/
 
         //Add the JoystickView as a Controller
         addController((JoystickView) findViewById(R.id.joystick));
@@ -209,7 +189,7 @@ public class UiSampleActivity extends ControllerActivity {
         // Set up sleep view
         mSlideToSleepView = (SlideToSleepView) findViewById(R.id.slide_to_sleep_view);
         mSlideToSleepView.hide();
-        // Send ball to sleep after completed widget movement
+        // Send ball to sleep after completed widget movement. NOT ENABLED FOR THIS PROJECT
         mSlideToSleepView.setOnSleepListener(new SlideToSleepView.OnSleepListener() {
             @Override
             public void onSleep() {
@@ -240,56 +220,83 @@ public class UiSampleActivity extends ControllerActivity {
             public void onSettingsClick() {
                 // Open the Bluetooth Settings Intent
                 Intent settingsIntent = new Intent(Settings.ACTION_BLUETOOTH_SETTINGS);
-                UiSampleActivity.this.startActivityForResult(settingsIntent, BLUETOOTH_SETTINGS_REQUEST);
+                MainControlUI.this.startActivityForResult(settingsIntent, BLUETOOTH_SETTINGS_REQUEST);
             }
         });
         joystick = (JoystickView) findViewById(R.id.joystick);
         joystick.setDificulty(this.ACTUAL_DIFICULTY);
+        this.isRecordEnabled = getIntent().getBooleanExtra("isRecordActivated", false);
+        joystick.isNoiseEnabled = getIntent().getBooleanExtra("isNoiseActivated", false);
 
+        this.isNoiseEnabled = getIntent().getBooleanExtra("isNoiseActivated", false);
 
-
-
+        //Remember, at this point the robot should be already connected.
+        //ROBOT is STATIC for any object generated. This object must be initialized before this activity start.
         setRobot(mRobot);
-        // Make sure you let the calibration view knows the robot it should control
-
-        //Remember, at this point the robot should be already connected
-        TextView txtDificulty = (TextView) findViewById(R.id.txtActualDificulty);
-
         mCalibrationView.setRobot(mRobot);
 
-        if (ACTUAL_DIFICULTY == EASY) {
-            txtDificulty.setText("EASY");
+        setDifficulty();
 
-        }
-
-        if (ACTUAL_DIFICULTY == MEDIUM) {
-            txtDificulty.setText("MEDIUM");
-            //mRobot.setColor(255, 228, 0);
-        }
-
-        if (ACTUAL_DIFICULTY == HARD) {
-            txtDificulty.setText("HARD");
-            //mRobot.setColor(255, 0, 0);
-        }
         mRobot.setColor(0, 255, 0);
         mNoSpheroConnectedView.setVisibility(View.GONE);
         mNoSpheroConnectedView.switchToConnectButton();
 
-        if(MainMenuFragment.isBioHarnessConected){
+        prepareJoystick();
+        prepareFile();
+    }
+
+    public void setDifficulty() {
+        TextView txtDificulty = (TextView) findViewById(R.id.txtActualDificulty);
+        if (ACTUAL_DIFICULTY == EASY)
+            txtDificulty.setText("EASY");
+
+        if (ACTUAL_DIFICULTY == MEDIUM)
+            txtDificulty.setText("MEDIUM");
+
+        if (ACTUAL_DIFICULTY == HARD)
+            txtDificulty.setText("HARD");
+    }
+
+    public void prepareJoystick() {
+        if (MainMenuFragment.isBioHarnessConected) {
             joystick.setVisibility(View.GONE);
             btnStop.setEnabled(true);
-            startAnimation();
-        }else{
+            startCountdownAnimation();
+        } else {
             txtRate.setText("Not connected");
             joystick.setVisibility(View.VISIBLE);
             btnStop.setEnabled(false);
         }
     }
 
+    public void prepareFile() {
+        root = Environment.getExternalStorageDirectory().toString();
+        dirPath = root + File.separator + this.DIR_NAME;
+        filePath = dirPath + File.separator + this.FILE_NAME;
+        dir = new File(dirPath);
+        if (!dir.exists())
+            dir.mkdirs();
+        file = new File(filePath);
+        try {
+            if (!file.exists()) {
 
-    /**
-     * Called when the user comes back to this activity
-     */
+                file.createNewFile();
+
+                //Writing the headers
+                FileOutputStream writer = new FileOutputStream(file, true);
+                String data = "Date, Difficulty, Minutes played, Seconds played, Min. BR, Max. BR, Average BR, Noise" + "\r\n";
+                writer.write(data.getBytes());
+                writer.flush();
+                writer.close();
+
+            }
+        } catch (IOException e) {
+            Toast.makeText(MainControlUI.this, "An error has happened when creating file", Toast.LENGTH_SHORT).show();
+        }
+
+
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -306,28 +313,16 @@ public class UiSampleActivity extends ControllerActivity {
         registerReceiver(bcBHReceiver, filter2);
 
     }
-    /**
-     * Called when the user presses the back or home button
-     */
+
     @Override
     protected void onPause() {
         super.onPause();
         if (mRobot != null)
             mRobot.stop();
-        /*if (mColorPickerShowing) return;
-
-        // Disconnect Robot properly
-        if (mRobot != null) {
-            mRobot.disconnect();
-        }
-        try {
-            unregisterReceiver(mColorChangeReceiver); // many times throws exception on leak
-        } catch (Exception e) {
-        }*/
         try {
             unregisterReceiver(bcBHReceiver);
             unregisterReceiver(mColorChangeReceiver);
-        }catch (Exception ex){
+        } catch (Exception ex) {
 
         }
     }
@@ -337,14 +332,10 @@ public class UiSampleActivity extends ControllerActivity {
         super.onStop();
         if (mRobot != null)
             mRobot.stop();
-        /*try {
-            unregisterReceiver(mColorChangeReceiver); // many times throws exception on leak
-        } catch (Exception e) {
-        }*/
         try {
             unregisterReceiver(bcBHReceiver);
             unregisterReceiver(mColorChangeReceiver);
-        }catch (Exception ex){
+        } catch (Exception ex) {
 
         }
     }
@@ -374,7 +365,7 @@ public class UiSampleActivity extends ControllerActivity {
             } else if (requestCode == BLUETOOTH_ENABLE_REQUEST) {
 
                 // User clicked "NO" on bluetooth enable settings screen
-                Toast.makeText(UiSampleActivity.this,
+                Toast.makeText(MainControlUI.this,
                         "Enable Bluetooth to Connect to Sphero", Toast.LENGTH_LONG).show();
             } else if (requestCode == BLUETOOTH_SETTINGS_REQUEST) {
                 // User enabled bluetooth, so refresh Sphero list
@@ -384,10 +375,22 @@ public class UiSampleActivity extends ControllerActivity {
         }
     }
 
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        if (mRobot != null)
+            mRobot.setColor(0, 0, 255);
+    }
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent event) {
+        mCalibrationView.interpretMotionEvent(event);
+        mSlideToSleepView.interpretMotionEvent(event);
+        return super.dispatchTouchEvent(event);
+    }
+
     /**
-     * When the user clicks the "Color" button, show the ColorPickerActivity
-     *
-     * @param v The Button clicked
+     * When the user clicks the "Color" button, show the ColorPickerActivity. NOT ENABLED
      */
     public void onColorClick(View v) {
 
@@ -404,71 +407,56 @@ public class UiSampleActivity extends ControllerActivity {
 
     /**
      * When the user clicks the "Sleep" button, show the SlideToSleepView shows
-     *
-     * @param v The Button clicked
      */
     public void onSleepClick(View v) {
         mSlideToSleepView.show();
-
     }
 
-    public LinearLayout scoreLayout;
-    public TextView txtWellDone;
-    public TextView txtWellDone2;
-    public TextView txtScore;
-
-    public void onClickFinalScore(View v){
+    /**
+     * When the user clicks the score screen to return.
+     */
+    public void onClickFinalScore(View v) {
         onBackPressed();
     }
 
-    @Override
-    public void onBackPressed(){
-        super.onBackPressed();
-        if(mRobot != null)
-            mRobot.setColor(0, 0, 255);
-    }
-    public void scoreAnimation(){
-          scoreLayout = (LinearLayout) findViewById(R.id.scoreLayout);
-          txtWellDone = (TextView) findViewById(R.id.txtWellDone);
-          txtWellDone2 = (TextView) findViewById(R.id.txtWellDone2);
-          txtScore = (TextView) findViewById(R.id.txtScore);
+    public void startScoreAnimation() {
+        scoreLayout = (LinearLayout) findViewById(R.id.scoreLayout);
+        txtScore = (TextView) findViewById(R.id.txtScore);
 
-        final Animation anim1 = AnimationUtils.loadAnimation(this, R.anim.appear);
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
+        scoreLayout.setVisibility(View.VISIBLE);
 
+        Animation anim1 = AnimationUtils.loadAnimation(this, R.anim.appear);
+        long scoredSeconds = getGameScore(); //Total number of seconds.
+        Time scoreTime = getScoreTime(scoredSeconds);
 
-                //  Layout
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        scoreLayout.setVisibility(View.VISIBLE);
-                        txtWellDone.setVisibility(View.VISIBLE);
-                        txtWellDone2.setVisibility(View.VISIBLE);
-                        txtScore.setVisibility(View.VISIBLE);
-                        double score = getGameScore() * 100;
-                        txtScore.setText(String.format("%.2f",score)+"%");
-                        scoreLayout.startAnimation(anim1);
-                    }
-                });
+        txtScore.setText(scoreTime.minute + " min " + scoreTime.second + " sec");
 
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException e) {
-                    //e.printStackTrace();
-                }
-
-            }
-        }).start();
+        scoreLayout.startAnimation(anim1);
 
     }
-    LinearLayout countDownLayout;
-    public void startAnimation() {
+
+    public Time getScoreTime(long seconds) {
+        int minutes = 0;
+        double sec = 0;
+
+        //Getting minutes and seconds.
+        if (seconds >= 60) {
+            minutes = (int) seconds / 60;
+            sec = seconds % 60;
+        } else {
+            sec = seconds;
+        }
+        Time t = new Time();
+        t.minute = minutes;
+        t.second = (int) sec;
+        return t;
+    }
+
+    public void startCountdownAnimation() {
         final Animation anim1 = AnimationUtils.loadAnimation(this, R.anim.appear);
         final Animation anim2 = AnimationUtils.loadAnimation(this, R.anim.disappear);
-        countDownLayout = (LinearLayout) findViewById(R.id.countDownLayout);
-        countDownLayout.setVisibility(View.VISIBLE);
+        countdownLayout = (LinearLayout) findViewById(R.id.countDownLayout);
+        countdownLayout.setVisibility(View.VISIBLE);
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -521,7 +509,7 @@ public class UiSampleActivity extends ControllerActivity {
 
                 try {
                     Thread.sleep(500);
-                } catch (InterruptedException e){
+                } catch (InterruptedException e) {
                     //e.printStackTrace();
                 }
 
@@ -534,8 +522,8 @@ public class UiSampleActivity extends ControllerActivity {
 
                 try {
                     Thread.sleep(500);
-                } catch (InterruptedException e){
-                   // e.printStackTrace();
+                } catch (InterruptedException e) {
+                    // e.printStackTrace();
                 }
 
                 runOnUiThread(new Runnable() {
@@ -557,7 +545,7 @@ public class UiSampleActivity extends ControllerActivity {
 
                 try {
                     Thread.sleep(500);
-                } catch (InterruptedException e){
+                } catch (InterruptedException e) {
                     //e.printStackTrace();
                 }
 
@@ -570,7 +558,7 @@ public class UiSampleActivity extends ControllerActivity {
 
                 try {
                     Thread.sleep(500);
-                } catch (InterruptedException e){
+                } catch (InterruptedException e) {
                     //e.printStackTrace();
                 }
 
@@ -594,7 +582,7 @@ public class UiSampleActivity extends ControllerActivity {
 
                 try {
                     Thread.sleep(500);
-                } catch (InterruptedException e){
+                } catch (InterruptedException e) {
                     //e.printStackTrace();
                 }
 
@@ -607,7 +595,7 @@ public class UiSampleActivity extends ControllerActivity {
 
                 try {
                     Thread.sleep(500);
-                } catch (InterruptedException e){
+                } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
 
@@ -631,30 +619,37 @@ public class UiSampleActivity extends ControllerActivity {
         }).start();
     }
 
-    public int global = 0;
     public void startGame() {
         joystick.setVisibility(View.VISIBLE);
-        countDownLayout.setVisibility(View.GONE);
+        countdownLayout.setVisibility(View.GONE);
         chronometer.setBase(SystemClock.elapsedRealtime());
         storageMeasuresPerSecond();
         chronometer.start();
     }
 
-    boolean control = true;
-    public ArrayList<Double> gameMeasuresPerSecond = new ArrayList<>();
-    public int timesUnderIdealBR = 0;
-
-    public void storageMeasuresPerSecond(){
+    public void storageMeasuresPerSecond() {
         chronometer.setOnChronometerTickListener(new Chronometer.OnChronometerTickListener() {
             @Override
             public void onChronometerTick(Chronometer chronometer) {
-                if(control) {//Ignore the first tick
-                    control = false;
-                }else{
+                if (firstTickControl) {//Ignore the first tick
+                    firstTickControl = false;
+                } else {
+                    double currentBR = Double.valueOf(txtRate.getText().toString());
+                    measuresNum++;
+                    measuresSum += currentBR;
+                    if (currentBR < minBR)
+                        minBR = currentBR;
+
+                    if (currentBR > maxBR)
+                        maxBR = currentBR;
+                    /* Old technique
                     if(Double.valueOf(txtRate.getText().toString())<=JoystickView.MAX_IDEAL_BREATH_RATE){
                         timesUnderIdealBR++;
                     }
                     gameMeasuresPerSecond.add(Double.valueOf(txtRate.getText().toString()));
+                    */
+
+
                 }
 
             }
@@ -665,28 +660,63 @@ public class UiSampleActivity extends ControllerActivity {
     public void stopGame() {
         chronometer.stop();
         mRobot.stop();
-        //double score = getGameScore() * 100;
-        //Toast.makeText(UiSampleActivity.this, "Your score: " + score, Toast.LENGTH_SHORT).show();
-
         btnStop.setEnabled(false);
         joystick.setEnabled(false);
 
-        scoreAnimation();
-        //Here we will calculate the performance percent of this game.
+        startScoreAnimation();
+
+        if (isRecordEnabled)
+            storeDataCSV();
 
     }
 
-    public double getGameScore(){
+    //To store the info into the CSV file
+    public void storeDataCSV() {
+        file = new File(filePath); //Writing the data in csv form
+        try {
+            FileOutputStream writer = new FileOutputStream(file, true);
+
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+            Date now = new Date();
+            String strDate = sdf.format(now);
+
+            String date = "\"" + strDate + "\"";
+            String difficulty;
+            if (ACTUAL_DIFICULTY == EASY)
+                difficulty = "Easy";
+            else if (ACTUAL_DIFICULTY == MEDIUM)
+                difficulty = "Medium";
+            else
+                difficulty = "Hard";
+
+            double averageBR = measuresSum / (double) measuresNum;
+            long scoredSeconds = getGameScore(); //Total number of seconds.
+            Time scoreTime = getScoreTime(scoredSeconds);
+
+            String data = date + "," + difficulty + "," + scoreTime.minute + "," + scoreTime.second + "," +
+                    minBR + "," + maxBR + "," + averageBR + "," + isNoiseEnabled + "\r\n";
+            writer.write(data.getBytes());
+            writer.flush();
+            writer.close();
+            new SingleMediaScanner(getBaseContext(), file.getPath());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public long getGameScore() {
+        long elapsedMillis = SystemClock.elapsedRealtime() - chronometer.getBase();
+        long elapsedSeconds = elapsedMillis / 1000;
+        return elapsedSeconds;
+    }
+
+    public double getGameScoreOldTechniche() {
         long elapsedMillis = SystemClock.elapsedRealtime() - chronometer.getBase();
         long elapsedSeconds = elapsedMillis / 1000;
 
         //Measuring the percent of times that the user was under the ideal BR
-        double percentTimesUnderIDeal = timesUnderIdealBR/ (double)elapsedSeconds;
+        double percentTimesUnderIDeal = timesUnderIdealBR / (double) elapsedSeconds;
         //Toast.makeText(UiSampleActivity.this, "timesUnderIdealBR: " + timesUnderIdealBR + "elapsedSeconds: " + elapsedSeconds, Toast.LENGTH_SHORT).show();
-
-
-
-
 
         //Let's get the percent of closeness of each measure above the IDEAL
 
@@ -696,7 +726,7 @@ public class UiSampleActivity extends ControllerActivity {
         double measure_i;
         double particularBRDistance;
         double particularPercent;//Measuring the percent of closeness to the ideal BR. As far as he is, as low as this percent is.
-        for(int c=0; c<gameMeasuresPerSecond.size();c++) {
+        for (int c = 0; c < gameMeasuresPerSecond.size(); c++) {
             measure_i = gameMeasuresPerSecond.get(c);
 
             if (measure_i > JoystickView.MAX_IDEAL_BREATH_RATE) {
@@ -713,7 +743,7 @@ public class UiSampleActivity extends ControllerActivity {
                 sumOfPercents += 1;
             }
         }
-        if(gameMeasuresPerSecond.size() > 0)
+        if (gameMeasuresPerSecond.size() > 0)
             averageOfPersents = sumOfPercents / gameMeasuresPerSecond.size();
         //At this point, we have two quantities. Let's return the average between them
 
@@ -725,11 +755,26 @@ public class UiSampleActivity extends ControllerActivity {
         stopGame();
     }
 
-    @Override
-    public boolean dispatchTouchEvent(MotionEvent event) {
-        mCalibrationView.interpretMotionEvent(event);
-        mSlideToSleepView.interpretMotionEvent(event);
-        return super.dispatchTouchEvent(event);
+    //This class reboot the memory card to be able to see changes over MTP protocol.
+    private class SingleMediaScanner implements MediaScannerConnection.MediaScannerConnectionClient {
+        private MediaScannerConnection mediaScan;
+        private String path;
+
+        SingleMediaScanner(Context context, String f) {
+            path = f;
+            mediaScan = new MediaScannerConnection(context, this);
+            mediaScan.connect();
+        }
+
+        @Override
+        public void onMediaScannerConnected() {
+            mediaScan.scanFile(path, null);
+        }
+
+        @Override
+        public void onScanCompleted(String path, Uri uri) {
+            mediaScan.disconnect();
+        }
     }
 
 
