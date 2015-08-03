@@ -36,47 +36,67 @@ import psi.tamu.controlyourbreath.orbotix.robot.widgets.joystick.JoystickView;
 import psi.tamu.controlyourbreath.orbotix.controlui.MainControlUI;
 import zephyr.android.BioHarnessBT.BTClient;
 
-
+/**
+ * @author Roger Solis
+ * Main menu fragment.<p> This controlls all things that we can make in the correspondent layout.
+ */
 public class MainMenuFragment extends Fragment {
 
+    //For the broadcast which will send information provided from the Bioharness to the MainControlUI
     public static final String ACTION_NEW_MEASURE = "psi.tamu.controlyourbreath.BREATH_CHANGE";
     public static final String EXTRA_NEW_MEASURE = "EXTRA_MEASURE";
-    private OnFragmentInteractionListener mListener;
-    public View myRootView;
-    public final int EASY = 1, MEDIUM = 2, HARD = 3;
-    ToggleButton tBtnTurnOnBH;
-    /*BioHarness*/
+    private OnFragmentInteractionListener mListener; //Requiered for the fragment
+    public View myRootView; //My root view. Parent activity
+    public final int EASY = 1, MEDIUM = 2, HARD = 3; //Levels of difficulty
+
+    /*
+    * Views
+    * */
+
+    ToggleButton tBtnTurnOnBH; //Turn on, turn off the BH connection
     BluetoothAdapter btAdapter = null; //To work with Bluetooth
-    BTClient btClient;
-    BHConnectedEventListener bhConnectedListener;
-    ProgressBar progress;
+    BTClient btClient; //For the BH connection
+    BHConnectedEventListener bhConnectedListener; //Listener for BH connections and data
+    ProgressBar progress; //Progress for the BH connection
     LinearLayout mainMenuOptionsLayout;
     FrameLayout mainMenuLayout;
-    NumberPicker numIdealRate;
-
-    final int RESPIRATION_RATE = 0x101;
-
-    public static boolean isBioHarnessConected = false;
-
-    boolean hasPairedBHDevice;
-    String BhMacID = "00:07:80:9D:8A:E8"; //Random MAC address
+    NumberPicker numIdealRate; //To define the minimum ideal breathing rate.
+    final int RESPIRATION_RATE = 0x101; //ID to retreive data from BH
+    public static boolean isBioHarnessConected = false; //Control variable
+    boolean hasPairedBHDevice;//control
+    String BhMacID = "00:07:80:9D:8A:E8"; //Random MAC address BH
     TextView txtStatusMessage;
     String bhStatusMessage;
 
+    /**
+    * Constructor required by fragment
+    * */
     public MainMenuFragment() {
-
+        //Do nothing
     }
 
-
+    /**
+     * Called when the fragment is created. This stores a instance of the parent view.
+     * @param inflater
+     * @param container
+     * @param savedInstanceState
+     * @return
+     */
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         myRootView = inflater.inflate(R.layout.fragment_main_menu, container, false);
         setListeners();
         progress = (ProgressBar) myRootView.findViewById(R.id.mainMenuProgress);
-
-
         numIdealRate = (NumberPicker) myRootView.findViewById(R.id.numIdealRate);
+        initializePicker();
+        return myRootView;
+    }
+
+    /**
+     * Picker initialization with prefered values
+     */
+    public void initializePicker(){
         numIdealRate.setMinValue(4);
         numIdealRate.setMaxValue(18);
 
@@ -87,9 +107,11 @@ public class MainMenuFragment extends Fragment {
             }
         });
 
-        return myRootView;
     }
 
+    /**
+     * Buttons listeners
+     */
     public void setListeners() {
         Button btn = (Button) myRootView.findViewById(R.id.btnEasy);
         btn.setOnClickListener(new View.OnClickListener() {
@@ -127,10 +149,7 @@ public class MainMenuFragment extends Fragment {
         });
 
 
-        /**
-         * layoutBreathRate, hide if I can not connect
-         *
-         * */
+        //layoutBreathRate, hide if I can not connect
         tBtnTurnOnBH = (ToggleButton) myRootView.findViewById(R.id.tBtnTurnOnBH);
 
         tBtnTurnOnBH.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -189,16 +208,22 @@ public class MainMenuFragment extends Fragment {
 
     }
 
+    /**
+     * Display the menu where we found the picker
+     * @param v
+     */
     public void onClickDropDownConf(View v) {
-
         Animation anim1 = AnimationUtils.loadAnimation(myRootView.getContext(), R.anim.dropdown_in);
         mainMenuOptionsLayout.setVisibility(View.VISIBLE);
         mainMenuOptionsLayout.startAnimation(anim1);
         numIdealRate.setValue((int) JoystickView.MAX_IDEAL_BREATH_RATE);
     }
 
+    /**
+     * Joystick activity launcher
+     * @param dificulty Level selected by user
+     */
     public void launchControlActivity(int dificulty) {
-
         Intent activityLanuncher = new Intent(getActivity(), MainControlUI.class);
 
         CheckBox chRecord = (CheckBox) myRootView.findViewById(R.id.chRecord);
@@ -249,7 +274,9 @@ public class MainMenuFragment extends Fragment {
         public void onFragmentInteraction(Uri uri);
     }
 
-    //BH messages handler
+    /**
+     * Bioharness message habdler
+     */
     final Handler Newhandler = new Handler() {
         public void handleMessage(Message msg) {
             TextView txtRate;
@@ -269,7 +296,9 @@ public class MainMenuFragment extends Fragment {
         }
     };
 
-
+    /**
+     * Start connection to BH. Listener is instantiated and waiting for connection
+     */
     public void connectToBH() {
         //Sending a message to android that we are going to initiate a pairing request
         IntentFilter filter = new IntentFilter("android.bluetooth.device.action.PAIRING_REQUEST");
@@ -285,10 +314,7 @@ public class MainMenuFragment extends Fragment {
         txtStatusMessage = (TextView) myRootView.findViewById(R.id.txtBreathRateMenu);
         bhStatusMessage = "Not Connected";
         txtStatusMessage.setText(bhStatusMessage);
-
         hasPairedBHDevice = false;
-
-
         btAdapter = BluetoothAdapter.getDefaultAdapter();
 
         Set<BluetoothDevice> pairedDevices = btAdapter.getBondedDevices(); //Getting the paired devices. The device must be paired before
@@ -303,6 +329,14 @@ public class MainMenuFragment extends Fragment {
             }
         }
 
+        createListener();
+
+    }
+
+    /**
+     * Creates a thread listener for a Bioharnes device.
+     */
+    public void createListener(){
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -315,34 +349,18 @@ public class MainMenuFragment extends Fragment {
                     //Setup the BH bluetooth client with the listener
                     btClient.addConnectedEventListener(bhConnectedListener);
 
-                    //TextView txtBreathRate = (TextView) myRootView.findViewById(R.id.txtBreathRateMenu);
-
-
                     if (btClient.IsConnected()) {
                         Log.i("Checkpoint", "BH Connected: " + DeviceName);
                         btClient.start();
-                        //txtBreathRate.setText("Connected"); //This will be deleted by the next measure that it's ok
-
                         isBioHarnessConected = true;
-                        //Reset all the values to 0s
-
-                    } else {// --------------------------------------------------------------       MANAGE THIS CASE AND THEL TO THE USER WHAT TO DO
-
-                        //txtStatusMessage = (TextView) myRootView.findViewById(R.id.txtBreathRateMenu);
-                        //bhStatusMessage = "Unable to Connect!";
-                        //txtStatusMessage.setText(bhStatusMessage);
+                    } else {
                         isBioHarnessConected = false;
-
-                        //Do something like do you try again?
                     }
 
                 } else {
-                    //-----------------------------------------------------------------------------NO PAIRED BIOHARNESS DEVICE AVAILABLE
-                    // TRY TO DO THIS AT FIRST INSTANCE; BEFORE THE APPLICATION BEGINS. THE SAME With sphero
-                    //Toast.makeText(UiSampleActivity.this, "No BioHarness device connected", Toast.LENGTH_LONG).show();
                     isBioHarnessConected = false;
-
                 }
+
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -351,9 +369,11 @@ public class MainMenuFragment extends Fragment {
                 });
             }
         }).start();
-
     }
 
+    /**
+     * Manage connection result
+     */
     public void onThreadFinish() {
         txtStatusMessage = (TextView) myRootView.findViewById(R.id.txtBreathRateMenu);
 
@@ -370,7 +390,9 @@ public class MainMenuFragment extends Fragment {
         txtStatusMessage.setText(bhStatusMessage);
     }
 
-    /*Auxiliar class for the pairing request*/
+    /**
+     * Auxiliar class for the pairing request
+     */
     private class BTBondReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -380,7 +402,9 @@ public class MainMenuFragment extends Fragment {
         }
     }
 
-    /*Auxiliar class for the pairing request*/
+    /**
+     * Auxiliar class for the pairing request
+     */
     private class BTBroadcastReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -401,6 +425,9 @@ public class MainMenuFragment extends Fragment {
         }
     }
 
+    /**
+     * Disconnects the Bioharness properly
+     */
     public void disconectFromBH() {
         TextView tv = (TextView) myRootView.findViewById(R.id.txtBreathRateMenu);
         String ErrorText = "Not connected";

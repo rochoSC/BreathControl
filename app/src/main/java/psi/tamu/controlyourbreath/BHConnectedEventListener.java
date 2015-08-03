@@ -1,20 +1,18 @@
-/*
-* Author:       Roger Fernando Solis Castilla
-* Date:         06/16/2015
-* Description:  Listener for the BioHarness measures.
-* */
-
 package psi.tamu.controlyourbreath;
 
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.util.Log;
 
 import zephyr.android.BioHarnessBT.*;
 
-
-public class BHConnectedEventListener extends ConnectListenerImpl{
+/**
+ * @author Zephyr
+ * @author Roger Solis
+ *         <p>
+ *         Listener for measures implementation. Source code provided by Zephyr and modified by Roger for this project.
+ */
+public class BHConnectedEventListener extends ConnectListenerImpl {
 
     private Handler hdlrOldHandler; //To keep the oldest one
     private Handler hdlrNewHandler; //The one that will be used
@@ -29,22 +27,25 @@ public class BHConnectedEventListener extends ConnectListenerImpl{
     private GeneralPacketInfo GPInfo = new GeneralPacketInfo();
     private PacketTypeRequest RqPacketType = new PacketTypeRequest();
 
-    /*
+    /**
      * Constructor
+     *
+     * @param handler The handler which receives the data
      */
     public BHConnectedEventListener(Handler handler, Handler _NewHandler) {
         super(handler, null);
-        hdlrOldHandler= handler;
+        hdlrOldHandler = handler;
         hdlrNewHandler = _NewHandler;
     }
 
-    /*
-    * Main function of the even listener
-    * */
+    /**
+     * Main function where the on connected and on measure received events are declared.
+     *
+     * @param eventArgs
+     */
     public void Connected(ConnectedEvent<BTClient> eventArgs) {
-        Log.i("CnctdEvntLstnr","Connected to BH: " + eventArgs.getSource().getDevice().getName());
 
-		//Use this object to enable or disable the different Packet types
+        //Use this object to enable or disable the different Packet types
         RqPacketType.GP_ENABLE = true;
         RqPacketType.BREATHING_ENABLE = true;
         RqPacketType.LOGGING_ENABLE = true;
@@ -58,7 +59,7 @@ public class BHConnectedEventListener extends ConnectListenerImpl{
             public void ReceivedPacket(ZephyrPacketEvent eventArgs) {
                 ZephyrPacketArgs msg = eventArgs.getPacket();
                 int MsgID = msg.getMsgID();
-                byte [] DataArray = msg.getBytes();
+                byte[] DataArray = msg.getBytes();
 
                 //Only the general case
                 if (MsgID == GP_MSG_ID) {

@@ -42,9 +42,18 @@ import orbotix.sphero.Sphero;
 import orbotix.view.calibration.CalibrationView;
 import orbotix.view.calibration.ControllerActivity;
 
+/**
+ * @author Roger
+ *
+ * This uses the UISample as the base of this activity took from the orbotix examples package.
+ * <p>
+ * Main control activity. This is where the joystick is created.
+ */
 public class MainControlUI extends ControllerActivity {
 
-
+    /**
+     * Data storage config
+     */
     public final String DIR_NAME = "BreathControl_Records";
     public final String FILE_NAME = "Records.csv";
 
@@ -123,6 +132,7 @@ public class MainControlUI extends ControllerActivity {
     public boolean isRecordEnabled;
     public boolean isNoiseEnabled;
 
+    //Data storage related
     boolean firstTickControl = true;
     public ArrayList<Double> gameMeasuresPerSecond = new ArrayList<>();
     public int timesUnderIdealBR = 0;
@@ -153,14 +163,17 @@ public class MainControlUI extends ControllerActivity {
         public void onReceive(Context context, Intent intent) {
             if (MainMenuFragment.isBioHarnessConected) {
                 String rate = intent.getStringExtra(MainMenuFragment.EXTRA_NEW_MEASURE);
-                if (Double.valueOf(rate) < JoystickView.MAX_IDEAL_BREATH_RATE) {
-                    txtRate.setTextColor(Color.WHITE);
-                    if (mRobot != null)
-                        mRobot.setColor(0, 255, 0);
-                } else {
-                    txtRate.setTextColor(Color.RED);
-                    if (mRobot != null)
-                        mRobot.setColor(255, 0, 0);
+                if(isNoiseEnabled) {//only if we have noise as feedback
+                    if (Double.valueOf(rate) < JoystickView.MAX_IDEAL_BREATH_RATE) {
+                        txtRate.setTextColor(Color.WHITE);
+                        if (mRobot != null)
+                            mRobot.setColor(0, 255, 0);
+                    } else {
+
+                        txtRate.setTextColor(Color.RED);
+                        if (mRobot != null)
+                            mRobot.setColor(255, 0, 0);
+                    }
                 }
                 txtRate.setText(rate);
             }
@@ -168,6 +181,10 @@ public class MainControlUI extends ControllerActivity {
     };
 
 
+    /**
+     * Views recovered. Calibration and joystick views instantiated and configured
+     * @param savedInstanceState
+     */
     @Override
     public void onCreate(Bundle savedInstanceState) {
 
@@ -212,8 +229,6 @@ public class MainControlUI extends ControllerActivity {
             @Override
             public void onConnectClick() {
                 finish();
-                //mSpheroConnectionView.setVisibility(View.VISIBLE);
-                //mSpheroConnectionView.startDiscovery();
             }
 
             @Override
@@ -297,10 +312,14 @@ public class MainControlUI extends ControllerActivity {
 
     }
 
+    /**
+     * Called when the users return to this activity
+     */
     @Override
     protected void onResume() {
         super.onResume();
 
+        //Color picker not available for this project
         if (mColorPickerShowing) {
             mColorPickerShowing = false;
             return;
@@ -314,6 +333,9 @@ public class MainControlUI extends ControllerActivity {
 
     }
 
+    /**
+     * Called when the user leaves this activity. Secures the robot movement
+     */
     @Override
     protected void onPause() {
         super.onPause();
@@ -327,6 +349,9 @@ public class MainControlUI extends ControllerActivity {
         }
     }
 
+    /**
+     * Called when the user leaves this activity. Just to secure the robot movement to stop and to unregister the broadcast
+     */
     @Override
     protected void onStop() {
         super.onStop();
@@ -340,6 +365,12 @@ public class MainControlUI extends ControllerActivity {
         }
     }
 
+    /**
+     * For color picker. Not used
+     * @param requestCode
+     * @param resultCode
+     * @param data
+     */
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -375,13 +406,21 @@ public class MainControlUI extends ControllerActivity {
         }
     }
 
+    /**
+     * Called when the user press back button
+     */
     @Override
     public void onBackPressed() {
         super.onBackPressed();
-        if (mRobot != null)
+        if (mRobot != null) //Restore color
             mRobot.setColor(0, 0, 255);
     }
 
+    /**
+     * Called when the display is touched. For calibration view. Sleep not available
+     * @param event
+     * @return
+     */
     @Override
     public boolean dispatchTouchEvent(MotionEvent event) {
         mCalibrationView.interpretMotionEvent(event);
@@ -419,6 +458,9 @@ public class MainControlUI extends ControllerActivity {
         onBackPressed();
     }
 
+    /**
+     * Starts the animation for the final score
+     */
     public void startScoreAnimation() {
         scoreLayout = (LinearLayout) findViewById(R.id.scoreLayout);
         txtScore = (TextView) findViewById(R.id.txtScore);
@@ -435,6 +477,11 @@ public class MainControlUI extends ControllerActivity {
 
     }
 
+    /**
+     * Obtains the formatted score
+     * @param seconds total seconds obtained by the user
+     * @return
+     */
     public Time getScoreTime(long seconds) {
         int minutes = 0;
         double sec = 0;
@@ -452,6 +499,9 @@ public class MainControlUI extends ControllerActivity {
         return t;
     }
 
+    /**
+     * Starts the count down animation when the BH is activated
+     */
     public void startCountdownAnimation() {
         final Animation anim1 = AnimationUtils.loadAnimation(this, R.anim.appear);
         final Animation anim2 = AnimationUtils.loadAnimation(this, R.anim.disappear);
@@ -619,6 +669,9 @@ public class MainControlUI extends ControllerActivity {
         }).start();
     }
 
+    /**
+     * Initializes the game
+     */
     public void startGame() {
         joystick.setVisibility(View.VISIBLE);
         countdownLayout.setVisibility(View.GONE);
@@ -627,6 +680,9 @@ public class MainControlUI extends ControllerActivity {
         chronometer.start();
     }
 
+    /**
+     * Storage of rate each second to be constant
+     */
     public void storageMeasuresPerSecond() {
         chronometer.setOnChronometerTickListener(new Chronometer.OnChronometerTickListener() {
             @Override
@@ -642,14 +698,6 @@ public class MainControlUI extends ControllerActivity {
 
                     if (currentBR > maxBR)
                         maxBR = currentBR;
-                    /* Old technique
-                    if(Double.valueOf(txtRate.getText().toString())<=JoystickView.MAX_IDEAL_BREATH_RATE){
-                        timesUnderIdealBR++;
-                    }
-                    gameMeasuresPerSecond.add(Double.valueOf(txtRate.getText().toString()));
-                    */
-
-
                 }
 
             }
@@ -657,6 +705,9 @@ public class MainControlUI extends ControllerActivity {
 
     }
 
+    /**
+     * Stops the game properly to store the user data.
+     */
     public void stopGame() {
         chronometer.stop();
         mRobot.stop();
@@ -670,12 +721,15 @@ public class MainControlUI extends ControllerActivity {
 
     }
 
-    //To store the info into the CSV file
+    /**
+     * To store data into CSV format
+     */
     public void storeDataCSV() {
         file = new File(filePath); //Writing the data in csv form
         try {
             FileOutputStream writer = new FileOutputStream(file, true);
 
+            //Header section
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
             Date now = new Date();
             String strDate = sdf.format(now);
@@ -693,6 +747,7 @@ public class MainControlUI extends ControllerActivity {
             long scoredSeconds = getGameScore(); //Total number of seconds.
             Time scoreTime = getScoreTime(scoredSeconds);
 
+            //Data section
             String data = date + "," + difficulty + "," + scoreTime.minute + "," + scoreTime.second + "," +
                     minBR + "," + maxBR + "," + averageBR + "," + isNoiseEnabled + "\r\n";
             writer.write(data.getBytes());
@@ -704,58 +759,23 @@ public class MainControlUI extends ControllerActivity {
         }
     }
 
+    /**
+     * Gets the number of seconds elapsed during the gameplay
+     * @return seconds elapsed
+     */
     public long getGameScore() {
         long elapsedMillis = SystemClock.elapsedRealtime() - chronometer.getBase();
         long elapsedSeconds = elapsedMillis / 1000;
         return elapsedSeconds;
     }
 
-    public double getGameScoreOldTechniche() {
-        long elapsedMillis = SystemClock.elapsedRealtime() - chronometer.getBase();
-        long elapsedSeconds = elapsedMillis / 1000;
-
-        //Measuring the percent of times that the user was under the ideal BR
-        double percentTimesUnderIDeal = timesUnderIdealBR / (double) elapsedSeconds;
-        //Toast.makeText(UiSampleActivity.this, "timesUnderIdealBR: " + timesUnderIdealBR + "elapsedSeconds: " + elapsedSeconds, Toast.LENGTH_SHORT).show();
-
-        //Let's get the percent of closeness of each measure above the IDEAL
-
-        double referenceDistance = JoystickView.MAX_BREATH_RATE - JoystickView.MAX_IDEAL_BREATH_RATE;
-        double sumOfPercents = 0;
-        double averageOfPersents = 0;
-        double measure_i;
-        double particularBRDistance;
-        double particularPercent;//Measuring the percent of closeness to the ideal BR. As far as he is, as low as this percent is.
-        for (int c = 0; c < gameMeasuresPerSecond.size(); c++) {
-            measure_i = gameMeasuresPerSecond.get(c);
-
-            if (measure_i > JoystickView.MAX_IDEAL_BREATH_RATE) {
-                //Get the percent of the closeness
-                if (measure_i > JoystickView.MAX_BREATH_RATE) {
-                    measure_i = JoystickView.MAX_BREATH_RATE;
-                }
-                particularBRDistance = JoystickView.MAX_BREATH_RATE - measure_i;
-                particularPercent = particularBRDistance / referenceDistance;
-
-                sumOfPercents += particularPercent;
-            } else {
-                //By this case, the percent of closeness will be 100% even if is under 8
-                sumOfPercents += 1;
-            }
-        }
-        if (gameMeasuresPerSecond.size() > 0)
-            averageOfPersents = sumOfPercents / gameMeasuresPerSecond.size();
-        //At this point, we have two quantities. Let's return the average between them
-
-        //This is returned considering 1 as 100%
-        return (percentTimesUnderIDeal + averageOfPersents) / 2;
-    }
-
     public void onClickStop(View v) {
         stopGame();
     }
 
-    //This class reboot the memory card to be able to see changes over MTP protocol.
+    /**
+     * This class reboot the memory card to be able to see changes over MTP protocol.
+     */
     private class SingleMediaScanner implements MediaScannerConnection.MediaScannerConnectionClient {
         private MediaScannerConnection mediaScan;
         private String path;

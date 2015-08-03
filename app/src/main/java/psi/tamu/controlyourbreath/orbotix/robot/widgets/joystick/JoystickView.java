@@ -24,9 +24,12 @@ import psi.tamu.controlyourbreath.R;
 import orbotix.view.calibration.Controller;
 
 /**
- * View that displays the Joystick, and handles the user's interactions with it.
- * In addition, allows the noise application acording to the BioHarness measures
- * <p/>
+ *
+ * @author  Adam Williams
+ * @author  Roger Solis
+ * View that is used as Joystick, and handles the user's interactions with it.
+ * In addition, allows the noise application according to the BioHarness measures
+ * <p>
  * Common view author: Adam Williams. View in the UIExample provided by orbotix.
  * Integration with BioHarness project author: Roger Fernando Solis Castilla
  */
@@ -36,7 +39,7 @@ public class JoystickView extends View implements Controller {
     private final JoystickPuck puck;
     private final JoystickWheel wheel;
 
-    //Parameters added by Roger
+    //Game parameters
     public final float MAX_SCALED_SPEED = 1;
 
     public final int EASY = 1;
@@ -54,63 +57,68 @@ public class JoystickView extends View implements Controller {
     public static double MAX_IDEAL_BREATH_RATE = 8; //This acts like up limit of the best breathing rate for the user.
     public static double USER_CURRENT_BREATH_RATE = 6; //This will be updated by BIOHarness
 
-    //End of game parameters
-
+    //Joystick parameters
     private int puck_radius = 25;
     private int wheel_radius = 150;
-
-
     private int puck_edge_overlap = 30;
-
     private final Point center_point = new Point();
-
     private boolean mEnabled = true;
     private volatile boolean draggingPuck = false;
     private int draggingPuckPointerId;
-
-    private Robot robot = null;
+    private Robot robot = null; //Robot instance
     private DriveControl drive_control = DriveControl.INSTANCE; //This helps to control the robot with a joystick in a simple way
 
-    private float speed = 0.8f;
+    private float speed = 0.8f;  //Basic speed
     private float rotation = .7f;
 
+    //Puck threads to make them mobiles
     private Runnable mOnStartRunnable;
     private Runnable mOnDragRunnable;
     private Runnable mOnEndRunnable;
 
+    //Feedback parameter
     public boolean isNoiseEnabled;
 
+    //Uncontrolled movement controllers. Flags
+    public boolean isUserControlAct = true;
+    public boolean isInvertedControls = false;
+    public boolean isUncontrolledActivated = false;
+
+
+    /**
+     * Joystick view constructor. Wheel and puck instantiated
+     * @param context Context where was called
+     * @param attrs Attributes
+     */
     public JoystickView(Context context, AttributeSet attrs) {
         super(context, attrs);
 
         this.puck = new JoystickPuck();
         this.wheel = new JoystickWheel();
 
-
         if (attrs != null) {
             TypedArray a = this.getContext().obtainStyledAttributes(attrs, R.styleable.JoystickView);
-
             //Get puck size
             this.puck_radius = (int) a.getDimension(R.styleable.JoystickView_puck_radius, 25);
-
             //Get alpha
-
             this.setAlpha(a.getFloat(R.styleable.JoystickView_alpha, 255));
-
             //Get edge overlap
             this.puck_edge_overlap = (int) a.getDimension(R.styleable.JoystickView_edge_overlap, 10);
-
-
         }
-
-
     }
 
-
+    /**
+     * Sets the difficulty chosen
+     * @param dificulty The level ID
+     */
     public void setDificulty(int dificulty) {
         this.ACTUAL_DIFICULTY = dificulty;
     }
 
+    /**
+     * Animation params
+     * @param alpha
+     */
     public void setAlpha(float alpha) {
         alpha = (alpha > 1) ? 1 : alpha;
         alpha = (alpha < 0) ? 0 : alpha;
@@ -121,16 +129,27 @@ public class JoystickView extends View implements Controller {
         this.wheel.setAlpha((int) alpha);
     }
 
-    /*Added by roger*/
+    /**
+     * Sets the current speed
+     * @param speed 0 <= speed <= 1
+     */
     public void setSpeed(float speed) {
         this.speed = speed;
     }
 
-    /*Added by roger*/
+    /**
+     * Sets the coords to move the robot
+     * @param x x-axis coord
+     * @param y y-axis coord
+     */
     public void setDriveCoords(int x, int y) {
         this.drive_control.driveJoyStick(x, y);
     }
 
+    /**
+     * Sets the rotation
+     * @param rotation
+     */
     public void setRotation(float rotation) {
         this.rotation = rotation;
 
@@ -157,25 +176,48 @@ public class JoystickView extends View implements Controller {
         this.puck.setPosition(new Point(this.center_point));
     }
 
+    /**
+     * Sets the current robot
+     * @param robot Robot instance
+     */
     public void setRobot(Robot robot) {
         this.robot = robot;
     }
 
+    /**
+     * Animation runnable
+     * @param runnable
+     */
     public void setOnStartRunnable(Runnable runnable) {
         mOnStartRunnable = runnable;
     }
 
+    /**
+     * Animation runnable
+     * @param runnable
+     */
     public void setOnDragRunnable(Runnable runnable) {
         mOnDragRunnable = runnable;
     }
 
+    /**
+     * Animation runnable
+     * @param runnable
+     */
     public void setOnEndRunnable(Runnable runnable) {
         mOnEndRunnable = runnable;
     }
 
+    /**
+     * Layout motion event. Puck control animation
+     * @param changed
+     * @param left
+     * @param top
+     * @param right
+     * @param bottom
+     */
     @Override
-    protected void onLayout(boolean changed, int left, int top, int right,
-                            int bottom) {
+    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
 
         this.center_point.set(this.getMeasuredWidth() / 2, this.getMeasuredHeight() / 2);
 
@@ -197,12 +239,14 @@ public class JoystickView extends View implements Controller {
         DriveControl.INSTANCE.setJoyStickPadSize(this.wheel.getBounds().width(), this.wheel.getBounds().height());
     }
 
+    /**
+     * Draw wheel and puck
+     * @param canvas
+     */
     @Override
     public void onDraw(Canvas canvas) {
-
         this.wheel.draw(canvas);
         this.puck.draw(canvas);
-
     }
 
     /**
@@ -301,33 +345,38 @@ public class JoystickView extends View implements Controller {
         return ret;
     }
 
-    public boolean isUserControlAct = true;
-    public boolean flag = false;
-    public boolean isInvertedControls = false;
-    public boolean isUncontrolledActivated = false;
-
+    /**
+     * Interprets the motion event of all the layout. Takes the joystick movement and represent it to the robot
+     * <p> Here is where the main logic is found. The robot noise and uncontrolled movements are here.
+     *
+     * @param event The event received
+     */
     @Override
     public void interpretMotionEvent(MotionEvent event) {
 
         boolean handled = false;
 
+        //Getting the puck location
         int pointer_Point = event.getActionIndex();
         int pointer_id = event.getPointerId(pointer_Point);
-        //GLOBAL_POINT_USAGE = new Point((int)event.getX(), (int)event.getY()); //ADDED
         final Point global_point = new Point((int) event.getX(), (int) event.getY());
         final Point local_point = getCorrectedPoint(global_point);
+
+        //Listen for each case
         switch (event.getActionMasked()) {
 
-            case MotionEvent.ACTION_DOWN:
+            case MotionEvent.ACTION_DOWN: //Joystick pressed
 
                 if (mEnabled) {
-                    if (this.robot != null && this.robot.isConnected()) {
+                    if (this.robot != null && this.robot.isConnected()) { //Move onli if connected
 
+                        //Validating whether the puck was moved and pressed or was another part of the layout
                         if (puck.getBounds().contains(local_point.x, local_point.y)) {
                             draggingPuck = true;
                             draggingPuckPointerId = pointer_id;
                             handled = true;
 
+                            //Preparing the speed acording the level
                             switch (ACTUAL_DIFICULTY) {
                                 case EASY:
                                     this.drive_control.setSpeedScale(this.EASY_BASE_SPEED);
@@ -343,37 +392,24 @@ public class JoystickView extends View implements Controller {
                                     break;
                             }
 
-
+                            //Indicates the style of control
                             this.drive_control.startDriving(this.getContext(), DriveControl.JOY_STICK);
 
+                            //If noise enabled, starts the uncontrolled movements
                             if (isNoiseEnabled)
                                 if (!isUncontrolledActivated) {
                                     activateUncontrolledMoves();
                                     isUncontrolledActivated = true;
                                 }
-                            /*new Thread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    try {
-                                        Thread.sleep(3000);
-                                        isUserControlAct = false;
-
-                                    } catch (InterruptedException e) {
-                                    }
-                                }
-                            }).start();*/
                         }
-
-                        if (mOnStartRunnable != null) {
+                        if (mOnStartRunnable != null)
                             mOnStartRunnable.run();
-                        }
                     }
                 }
                 break;
 
-            case MotionEvent.ACTION_MOVE:
-                if (mEnabled && draggingPuck && draggingPuckPointerId == pointer_id) {
-
+            case MotionEvent.ACTION_MOVE: //Joystick move
+                if (mEnabled && draggingPuck && draggingPuckPointerId == pointer_id) {//Validating puck pressed
 
                     //Adjust drive coordinates for driving
                     final Point drive_coord = this.getDrivePuckPosition(local_point);
@@ -381,30 +417,20 @@ public class JoystickView extends View implements Controller {
                     //Returns an alteratedCoord if breath is out of range
                     final int maxX = this.wheel.getBounds().width(); //This represent the max X possible coord on the wheel
                     final int maxY = this.wheel.getBounds().height();
-                    if (isUserControlAct) {//To leave total control to the uncontroled moves
+                    if (isUserControlAct) {//To leave total control to the uncontrolled moves
                         Point alteratedCoord;
                         if (!isNoiseEnabled) {//If the user decided to not be affected by noise.
                             this.drive_control.driveJoyStick(drive_coord.x, drive_coord.y);
                         } else {
-                            if (isInvertedControls) {
+                            if (isInvertedControls) {//Special uncontrolled move case
                                 alteratedCoord = uncInvertedDriving(drive_coord.x, drive_coord.y, maxX, maxY);
                             } else {
                                 alteratedCoord = this.getAlteredCoord(drive_coord);
                             }
-                            this.drive_control.driveJoyStick(alteratedCoord.x, alteratedCoord.y);
+                            this.drive_control.driveJoyStick(alteratedCoord.x, alteratedCoord.y); //MOVE
                         }
                     }
-                /*else{//Another type of feedback is already happening.
-                    if(!flag) {
-                        //uncBoost(drive_coord.x, drive_coord.y, maxX, maxY);
-                        //uncStop();
-                        //uncBackwardBoost(drive_coord.x, drive_coord.y, maxX, maxY);v
-                        uncRoll(maxX,maxY);
-                        flag = true;
-                    }
-                }*/
 
-                    //this.drive_control.driveJoyStick(drive_coord.x , drive_coord.y);
                     //Set the puck position to within the bounds of the wheel
                     final Point i = getValidPuckPosition(local_point);
                     local_point.set(i.x, i.y);
@@ -419,8 +445,8 @@ public class JoystickView extends View implements Controller {
                 }
                 break;
 
-            case MotionEvent.ACTION_UP:
-                if (draggingPuck && draggingPuckPointerId == pointer_id) {
+            case MotionEvent.ACTION_UP: //Joystick release
+                if (draggingPuck && draggingPuckPointerId == pointer_id) { //Validating
                     this.resetPuck();
                     invalidate();
 
@@ -459,12 +485,11 @@ public class JoystickView extends View implements Controller {
 
     public Point actualPoint;
 
+    /**
+     * Creates a thread where each random amount of seconds will result into a random
+     * movement with intensity according to the game level and the level of breathing rate.
+     */
     public void activateUncontrolledMoves() {
-        /*
-        This will be a thread where each random amount of seconds will result into a random
-        movement with intensity according to the game level and the level of breathing rate.
-        */
-
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -473,19 +498,18 @@ public class JoystickView extends View implements Controller {
                 actualPoint.y = 0;
                 final int maxX = wheel.getBounds().width(); //This represent the max X possible coord on the wheel
                 final int maxY = wheel.getBounds().height();
-                int timeBtwnMvmnts = 5000;
+                int timeBtwnMvmnts = 5000; //Time between each new movement
                 while (true) {
 
                     try {
-                        Thread.sleep(timeBtwnMvmnts);//
+                        Thread.sleep(timeBtwnMvmnts);//Waiting for the next movement
                     } catch (InterruptedException e) {
 
                     }
-                    if (isUncontrolledActivated) {
+                    if (isUncontrolledActivated) { //If is activated continue
+                        double userCurrentSnap = USER_CURRENT_BREATH_RATE; //Snapshot to the current BR
 
-
-                        double userCurrentSnap = USER_CURRENT_BREATH_RATE;
-
+                        //Getting the percent of excess according to the max ideal breathing rate and the max posible rate (20)
                         //Consider 6-8, MAX_IDEAL_BREATH_RATE (8) will be the max
                         double referenceDistance = MAX_BREATH_RATE - MAX_IDEAL_BREATH_RATE;
                         double myRateExcess = userCurrentSnap - MAX_IDEAL_BREATH_RATE;
@@ -493,7 +517,9 @@ public class JoystickView extends View implements Controller {
                         double percentOfExcess = relationPreferedActual * 100;
 
                         Random r = new Random();
-                        if (percentOfExcess < 40 && percentOfExcess > 10) { //A little error margin to make it easier
+
+                        //Probability of appearance of each special move
+                        if (percentOfExcess <= 40 && percentOfExcess > 10) { //A little error margin to make it easier. Nets to be 10% excess
                             //Boost, stop, roll , inverted. probabilities (70,16,10,4)
                             int diceRolled = r.nextInt(100); //This works as the "probability"
                             if (diceRolled < 4) {// 4% inverted
@@ -513,7 +539,7 @@ public class JoystickView extends View implements Controller {
                                     uncForwardBoost(actualPoint.x, actualPoint.y, maxX, maxY);
                             }
                             timeBtwnMvmnts = 8000;
-                        } else if (percentOfExcess < 60 && percentOfExcess > 10) {
+                        } else if (percentOfExcess <= 60 && percentOfExcess > 10) {
                             //Boost, stop, roll , inverted. probabilities (45,30,15,10)
                             int diceRolled = r.nextInt(100);
                             if (diceRolled < 10) {// 10% inverted
@@ -559,13 +585,19 @@ public class JoystickView extends View implements Controller {
         }).start();
     }
 
-    //Uncontrolled feedback
+    //Uncontrolled feedback section
 
-    //Weak ones (Low BR)
+    /**
+     * Special move which makes a boost forward
+     * @param x Current x-axis movement
+     * @param y Current y-axis movement
+     * @param maxX Maximum x-axis movement
+     * @param maxY Maximum y-axis movement
+     */
     public void uncForwardBoost(final int x, final int y, final int maxX, final int maxY) {
-        //First, determine in which quadrant is the puck. Remember, here with the driver there is no negative values to the drive coords
-
-
+        /*  First, determine in which quadrant is the puck.
+            Remember, here with the driver there is no negative values to the drive coords
+         */
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -611,6 +643,13 @@ public class JoystickView extends View implements Controller {
         }).start();
     }
 
+    /**
+     * Special move which makes a boost backward
+     * @param x Current x-axis movement
+     * @param y Current y-axis movement
+     * @param maxX Maximum x-axis movement
+     * @param maxY Maximum y-axis movement
+     */
     public void uncBackwardBoost(final int x, final int y, final int maxX, final int maxY) {
         new Thread(new Runnable() {
             @Override
@@ -661,20 +700,24 @@ public class JoystickView extends View implements Controller {
         }).start();
     }
 
-    //Medium (Medium BR)
+    /**
+     * Stops the robot movement for a specific time according to the level
+     */
     public void uncStop() {
-        int time = 7;
-        if (ACTUAL_DIFICULTY == EASY)
-            time = 7;
-        if (ACTUAL_DIFICULTY == MEDIUM)
-            time = 12;
-        if (ACTUAL_DIFICULTY == HARD)
-            time = 16;
+
         new Thread(new Runnable() {
+
             @Override
             public void run() {
+                int time = 7;
+                if (ACTUAL_DIFICULTY == EASY)
+                    time = 7;
+                if (ACTUAL_DIFICULTY == MEDIUM)
+                    time = 12;
+                if (ACTUAL_DIFICULTY == HARD)
+                    time = 16;
                 int count = 0;
-                while (count < 15) {
+                while (count < time) {
                     drive_control.stopDriving();
                     try {
                         Thread.sleep(100);
@@ -688,7 +731,14 @@ public class JoystickView extends View implements Controller {
         }).start();
     }
 
-    //Strong ones (High BR)
+    /**
+     * This obtains the new coord for the inverted movement
+     * @param x Current x-axis movement
+     * @param y Current y-axis movement
+     * @param maxX Maximum x-axis movement
+     * @param maxY Maximum y-axis movement
+     * @return The inverted point to move
+     */
     public Point uncInvertedDriving(final int x, final int y, final int maxX, final int maxY) {
         Point p = new Point();
         int centerX = maxX / 2;
@@ -717,6 +767,11 @@ public class JoystickView extends View implements Controller {
         return p;
     }
 
+    /**
+     * Makes a circle wherever the robot is
+     * @param maxX
+     * @param maxY
+     */
     public void uncRoll(final int maxX, final int maxY) {
         new Thread(new Runnable() {
             @Override
@@ -755,6 +810,9 @@ public class JoystickView extends View implements Controller {
         }).start();
     }
 
+    /**
+     * Restores the speed values. In case the user controls BR
+     */
     public void restoreValues() {
         drive_control.stopDriving();
         if (ACTUAL_DIFICULTY == EASY)
@@ -767,6 +825,10 @@ public class JoystickView extends View implements Controller {
         isUserControlAct = true;
     }
 
+    /**
+     * Controls the duration of the inverted controls
+     * @param duration Duration in milliseconds
+     */
     public void invertControls(final int duration) {
         new Thread(new Runnable() {
             @Override
@@ -781,11 +843,17 @@ public class JoystickView extends View implements Controller {
             }
         }).start();
     }
-    //End of uncontrolled feedback
 
-    //If breath rate is out of range, returns an altered coordinate according to the level of out of range and
-    //the current game level (Easy, Medium, Hard). If breath is in range, return the same coord.
+    /**
+     * Gets the altered coord. Noise according to y=ax^2 + b, where x is the actual BR and Y the corresponding noise.
+     *
+     * This affects the speed. (Not for this time because was too hard)
+     * @param actualPoint The actual point of movement
+     * @return The altered point
+     */
     public Point getAlteredCoord(Point actualPoint) {
+        //If breath rate is out of range, returns an altered coordinate according to the level of out of range and
+        //the current game level (Easy, Medium, Hard). If breath is in range, return the same coord.
         Point alteratedPoint = actualPoint;
 
         Random randomNoise = new Random();
@@ -826,7 +894,7 @@ public class JoystickView extends View implements Controller {
         */
         double a, b;
         double maxSpeed; //Max space in case of 100% of
-        double easyNoise = .38, mediumNoise = .58, hardNoise = .75;
+        double easyNoise = .38, mediumNoise = .58, hardNoise = .75; //Percents
 
         //drive_control works acording to the size of the wheel. And as closer to the circumference as faster that will be.
         int maxX = this.wheel.getBounds().width(); //This represent the max X possible coord on the wheel
@@ -881,13 +949,24 @@ public class JoystickView extends View implements Controller {
         return alteratedPoint;
     }
 
+    /**
+     *  Second part of the altered coord. Noise according to y=ax^2 + b, where x is the actual BR and Y the corresponding noise.
+     *
+     * This affects the direction and the speed in a little amount at the same time
+     * @param maxX The max possible x-axis coord
+     * @param maxY The max possible y-axis coord
+     * @param noise The percent of noise possible
+     * @param percentOfExcess The current excess percent
+     * @param x The current x
+     * @param y The current y
+     * @return
+     */
     public Point getFinalPoint(int maxX, int maxY, double noise, double percentOfExcess, int x, int y) {
         Point alteredPoint = new Point();
         //Alter coords
         double maxXRange = maxX * noise; //Now we have the max number that could be added to the actual x coord. The range will be composed of 0 - maxRange
-        double maxYRange = maxY * noise;
-        //double maxXRange = maxX /2 * easyNoise; //Now we have the max number that could be added to the actual x coord. The range will be composed of 0 - maxRange
-        //double maxYRange = maxY /2 * easyNoise;
+        double maxYRange = maxY * noise; //Getting the X and Y value according to the noise percent.
+
         //Lets get the formula for determine which value between 0 and RANGE would be added acording to the level
         //Cero for 0% of excess, maxRange for 100% of excess
         //Solve y=ax^2
@@ -910,8 +989,8 @@ public class JoystickView extends View implements Controller {
 
         int adjust = 6;//For make the range
 
-        alteredPoint.x = getAlteredPoint(x, (int) noiseX, adjust);
-        alteredPoint.y = getAlteredPoint(y, (int) noiseY, adjust);
+        alteredPoint.x = getAlteredPointOfCoord(x, (int) noiseX, adjust);
+        alteredPoint.y = getAlteredPointOfCoord(y, (int) noiseY, adjust);
 
         //Just to stay in bounds
         if (alteredPoint.x >= maxX) { //Because if we reach the max, it's like start again
@@ -922,15 +1001,35 @@ public class JoystickView extends View implements Controller {
         return alteredPoint;
     }
 
+    /**
+     * Speed formula. y=ax^2+b. Not used
+     * @param a
+     * @param b
+     * @param excess
+     * @return
+     */
     public double getSpeedAccordingExcessPercent(double a, double b, double excess) {
         return a * excess * excess + b;
     }
 
+    /**
+     * Noise formula. y=ax^2
+     * @param a
+     * @param excess
+     * @return
+     */
     public double getNoiseAccordingExcessPercent(double a, double excess) {
         return a * excess * excess;
     }
 
-    public int getAlteredPoint(int x, int noise, int adjust) {
+    /**
+     * Returns the point with noise
+     * @param n The point to alter
+     * @param noise Amount of noise
+     * @param adjust Simple adjust
+     * @return The altered specific point n altered
+     */
+    public int getAlteredPointOfCoord(int n, int noise, int adjust) {
         //Before we apply the noise, we must considere ir as an arange. This just to make it a little bit unpredictable
         Random rand = new Random();
         int max = noise + adjust;
@@ -942,9 +1041,8 @@ public class JoystickView extends View implements Controller {
         if (rand.nextInt(2) == 0)
             noiseAdjusted = noiseAdjusted * (-1);
 
-
         int generated;
-        generated = x - noiseAdjusted;
+        generated = n - noiseAdjusted;
 
         if (generated < 0)
             generated = 0;
@@ -952,6 +1050,10 @@ public class JoystickView extends View implements Controller {
         return generated;
     }
 
+    /**
+     * Enables or disables the joystick actions
+     * @param val True if activated
+     */
     @Override
     public void setEnabled(boolean val) {
         super.setEnabled(val);
